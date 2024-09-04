@@ -199,10 +199,8 @@ public class AccountEnergyDiff implements Callable<Integer> {
                 String unfrozenV2Energy =  transInfoObject.get("unfrozenV2").toString();
                 ret.put("unfrozenV2_energy", unfrozenV2Energy);
             }
-        } catch (SocketTimeoutException e) {
-            logger.error("getAccountEnergy exception {}", e);
         } catch (Exception e) {
-            logger.error("getAccountEnergy exception {}", e);
+            logger.error("getAccountEnergy exception: ", e);
         }
 
         return ret;
