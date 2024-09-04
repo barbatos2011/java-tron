@@ -196,6 +196,9 @@ public class DbBlockScan implements Callable<Integer> {
         for (Map.Entry<Protocol.Transaction.Contract.ContractType, HashMap<ByteString, Integer>> entry : countMap.entrySet()) {
             logger.info("ContractType: {}", entry.getKey());
             for (Map.Entry<ByteString, Integer> entry1: entry.getValue().entrySet()) {
+                if (entry1.getValue() <= 10000) {
+                    continue;
+                }
                 logger.info("address= {} and value= {}", entry1.getKey(), entry1.getValue());
             }
         }
