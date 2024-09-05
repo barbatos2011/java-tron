@@ -199,7 +199,7 @@ public class DbBlockScan implements Callable<Integer> {
                 if (entry1.getValue() <= 10000) {
                     continue;
                 }
-                logger.info("address= {} and value= {}", entry1.getKey(), entry1.getValue());
+                logger.info("address= {} and value= {}", entry1.getKey().toString(), entry1.getValue());
             }
         }
     }
