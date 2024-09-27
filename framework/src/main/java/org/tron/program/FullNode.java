@@ -348,7 +348,7 @@ public class FullNode {
 
   private static final String JSON_FILE_PATH = "/data/yk/nodeMap.json";
   private static void findAttackTransactions() throws BadItemException, IOException {
-    long startBlock = 64488295L;
+    long startBlock = 64568170L;
     long endBlock = 65352295L;
     HashMap<String, HashSet<String>> blockTokenMap = new HashMap<>();
 
