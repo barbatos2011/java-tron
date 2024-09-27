@@ -2,6 +2,8 @@ package org.tron.program;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.JCommander;
 
@@ -13,18 +15,15 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.google.common.primitives.Longs;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
@@ -169,7 +168,9 @@ public class FullNode {
 
     try {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
-      filterTransactionAndToken();
+
+//      filterTransactionAndToken();
+      findAttackTransactions();
     } catch (Exception e) {
       logger.error("blockTransStat=>Exception:{}", e);
     }
@@ -211,6 +212,9 @@ public class FullNode {
   private static String WTRX41 = "41891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18";
   private static String USDT = "a614f803B6FD780986A42c78Ec9c7f77e6DeD13C".toLowerCase();
 
+  private static String OWNER_ADDRESS  = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
+  private static String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
+
   private static String get41Addr(String hexAddr) {
     if (!hexAddr.startsWith("41")) {
       return "41" + hexAddr;
@@ -247,56 +251,7 @@ public class FullNode {
           String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
           if (OWNER_ADDRESS.equals(ownerAddress)) {
             if (CONTRACT_ADDRESS.equals(contractAddress)) {
-              SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
-                      tx.getInstance()
-                              .getRawData()
-                              .getContract(0)
-                              .getParameter()
-                              .unpack(SmartContractOuterClass.TriggerSmartContract.class);
-              String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
-
-              String token = null;
-              if (callData.startsWith(SWAP_SELL_METHOD_1)) {
-                if (callData.length() < 392) {
-                  token = get41Addr(callData.substring(8, 8 + 64).substring(24));
-                } else {
-                  String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-                  String token2 = callData.substring(456).substring(24); // token2 wtrx
-                  token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
-                }
-              } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
-                String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-                String token2 =
-                        callData.length() >= 456
-                                ? callData.substring(456).substring(24)
-                                : null; // token2 wtrx
-                token =
-                        (token1.equalsIgnoreCase(WTRX) && token2 != null)
-                                ? get41Addr(token2)
-                                : get41Addr(token1);
-              } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
-                token = get41Addr(callData.substring(392, 392 + 64)); // token
-              } else if (callData.startsWith(SWAP_METHOD)) {
-                //                String data1 = callData.substring(8, 8 + 64); // trx amount
-                String token1 = callData.substring(392, 392 + 64).substring(24); // out token
-                String token2 = callData.substring(456, 456 + 64).substring(24); // in token
-                if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
-                  token = get41Addr(token2);
-                } else {
-                  token = get41Addr(token1);
-                }
-              } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
-                String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-                String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
-                token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
-              } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
-                String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-                String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
-                token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
-              } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
-                token = get41Addr(callData.substring(392, 392 + 64)); // token
-              }
-
+              String token = absToken(tx);
               JSONObject obj = new JSONObject();
               obj.put("tx", Hex.toHexString(tx.getTransactionId().getBytes()));
               obj.put("block_num", blockCapsule.getNum());
@@ -311,6 +266,340 @@ public class FullNode {
         }
       }
     }
+  }
+
+  private static String absToken(TransactionCapsule tx) throws InvalidProtocolBufferException {
+    SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
+            tx.getInstance()
+                    .getRawData()
+                    .getContract(0)
+                    .getParameter()
+                    .unpack(SmartContractOuterClass.TriggerSmartContract.class);
+    String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
+
+    String token = null;
+    if (callData.startsWith(SWAP_SELL_METHOD_1)) {
+      if (callData.length() < 392) {
+        token = get41Addr(callData.substring(8, 8 + 64).substring(24));
+      } else {
+        String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+        String token2 = callData.substring(456).substring(24); // token2 wtrx
+        token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+      }
+    } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
+      String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+      String token2 =
+              callData.length() >= 456
+                      ? callData.substring(456).substring(24)
+                      : null; // token2 wtrx
+      token =
+              (token1.equalsIgnoreCase(WTRX) && token2 != null)
+                      ? get41Addr(token2)
+                      : get41Addr(token1);
+    } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
+      token = get41Addr(callData.substring(392, 392 + 64)); // token
+    } else if (callData.startsWith(SWAP_METHOD)) {
+      //                String data1 = callData.substring(8, 8 + 64); // trx amount
+      String token1 = callData.substring(392, 392 + 64).substring(24); // out token
+      String token2 = callData.substring(456, 456 + 64).substring(24); // in token
+      if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
+        token = get41Addr(token2);
+      } else {
+        token = get41Addr(token1);
+      }
+    } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
+      String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+      String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
+      token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+    } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
+      String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+      String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
+      token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+    } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
+      token = get41Addr(callData.substring(392, 392 + 64)); // token
+    }
+    return token;
+  }
+
+  private static String absSelector(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) throws InvalidProtocolBufferException {
+    String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
+    if (callData.startsWith(SWAP_SELL_METHOD_1)) {
+      return "Sell";
+    } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
+      return "Sell";
+    } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
+      return "Sell";
+    } else if (callData.startsWith(SWAP_METHOD)) {
+      String token1 = callData.substring(392, 392 + 64).substring(24); // out token
+      if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
+        return "Buy";
+      } else {
+        return "Sell";
+      }
+    } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
+      return "Buy";
+    } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
+      return "Buy";
+    } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
+      return "Buy";
+    }
+    return "";
+  }
+
+  private static final String JSON_FILE_PATH = "/data/yk/nodeMap.json";
+  private static void findAttackTransactions() throws BadItemException, IOException {
+    long startBlock = 64488295L;
+    long endBlock = 65352295L;
+    HashMap<String, HashSet<String>> blockTokenMap = new HashMap<>();
+
+    // 使用 BufferedReader 和 FileReader 读取 JSON 文件内容
+    try (BufferedReader reader = new BufferedReader(new FileReader(JSON_FILE_PATH))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        // 使用 fastjson 将字符串转换为 JSONObject
+        JSONObject jsonObject = JSON.parseObject(line);
+        String mKey = jsonObject.getString("block_num");
+        if (!blockTokenMap.containsKey(mKey)) {
+          blockTokenMap.put(mKey, new HashSet<>());
+        }
+        blockTokenMap.get(mKey).add(jsonObject.getString("token"));
+      }
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
+
+    DBIterator retIterator =
+            (DBIterator) ChainBaseManager.getInstance().getTransactionRetStore().getDb().iterator();
+    retIterator.seek(ByteArray.fromLong(startBlock));
+    DBIterator blockIterator =
+            (DBIterator) ChainBaseManager.getInstance().getBlockStore().getDb().iterator();
+    blockIterator.seek(ByteArray.fromLong(startBlock));
+
+    while (retIterator.hasNext() && blockIterator.hasNext()) {
+      Map.Entry<byte[], byte[]> retEntry = retIterator.next();
+      Map.Entry<byte[], byte[]> blockEntry = blockIterator.next();
+      byte[] key = retEntry.getKey();
+      long blockNum = Longs.fromByteArray(key);
+      long blockStoreNum = Longs.fromByteArray(blockEntry.getKey());
+      while (blockNum != blockStoreNum) {
+        blockEntry = blockIterator.next();
+        blockStoreNum = Longs.fromByteArray(blockEntry.getKey());
+      }
+      if (blockNum > endBlock) {
+        break;
+      }
+
+      if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
+        combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry,retIterator, blockIterator);
+      }
+    }
+  }
+
+  private static void combineSingleAttackBlocks( HashMap<String, HashSet<String>> blockTokenMap, long blockNum, Map.Entry<byte[], byte[]> retEntry, Map.Entry<byte[], byte[]> blockEntry, DBIterator retIterator, DBIterator blockIterator) throws BadItemException, IOException {
+    JSONArray objAttacker = new JSONArray();
+    JSONArray objNormal = new JSONArray();
+    for (int i = 0; i < 3; i++) {
+      if (i > 0) {
+        if (retIterator.hasNext() && blockIterator.hasNext()) {
+          retEntry = retIterator.next();
+          blockEntry = blockIterator.next();
+          byte[] key = retEntry.getKey();
+          long blockNum1 = Longs.fromByteArray(key);
+          long blockStoreNum = Longs.fromByteArray(blockEntry.getKey());
+          if (blockStoreNum > blockNum+2 || blockNum1 > blockNum+2) {
+            break;
+          }
+          while (blockNum1 != blockStoreNum) {
+            blockEntry = blockIterator.next();
+            blockStoreNum = Longs.fromByteArray(blockEntry.getKey());
+          }
+        } else {
+          break;
+        }
+      }
+
+      byte[] value = retEntry.getValue();
+      TransactionRetCapsule transactionRetCapsule = new TransactionRetCapsule(value);
+      BlockCapsule blockCapsule = new BlockCapsule(blockEntry.getValue());
+      Map<String, TransactionCapsule> txCallerMap = new HashMap<>();
+      for (TransactionCapsule tx : blockCapsule.getTransactions()) {
+        txCallerMap.put(tx.getTransactionId().toString(), tx);
+      }
+      int txIndex = 0;
+      for (Protocol.TransactionInfo transactionInfo :
+              transactionRetCapsule.getInstance().getTransactioninfoList()) {
+        txIndex++;
+        byte[] txId = transactionInfo.getId().toByteArray();
+        TransactionCapsule tx = txCallerMap.get(Hex.toHexString(txId));
+
+        Protocol.Transaction transaction = tx.getInstance();
+        Protocol.Transaction.Contract.ContractType type =
+                transaction.getRawData().getContract(0).getType();
+        if (type == Protocol.Transaction.Contract.ContractType.TriggerSmartContract) {
+          SmartContractOuterClass.TriggerSmartContract contract = ContractCapsule.getTriggerContractFromTransaction(transaction);
+            assert contract != null;
+          String ownerAddress = StringUtil.encode58Check(contract.getOwnerAddress().toByteArray());
+          String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
+          if (CONTRACT_ADDRESS.equals(contractAddress)) {
+
+            String token = absToken(tx);
+            if (blockTokenMap.get(String.valueOf(blockNum+1)).contains(token)) {
+              SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
+                      tx.getInstance()
+                              .getRawData()
+                              .getContract(0)
+                              .getParameter()
+                              .unpack(SmartContractOuterClass.TriggerSmartContract.class);
+
+              if (OWNER_ADDRESS.equals(ownerAddress)) {
+                // attacker
+                JSONObject objTx = new JSONObject();
+
+                String selector = absSelector(triggerSmartContract);
+                objTx.put("selector", selector);
+
+                objTx.put("ret", transaction.getRet(0).getContractRet().name());
+
+                long energyFee = transactionInfo.getReceipt().getNetFee();
+                long netFee = transactionInfo.getReceipt().getEnergyFee();
+                objTx.put("netFee", netFee);
+                objTx.put("energyFee", energyFee);
+
+                objTx.put("block_num", blockCapsule.getNum());
+                objTx.put("block_time", blockCapsule.getTimeStamp());
+                objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
+
+                objTx.put("tx_index", txIndex);
+                objTx.put("tx_expiration", transaction.getRawData().getExpiration());
+                objTx.put("token", token);
+
+                if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
+                  Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
+                  if (pair != null) {
+                    objTx.put("tx_trx_amount", pair.getLeft().longValue());
+                    objTx.put("tx_token_amount", pair.getRight().longValue());
+                  } else {
+                    objTx.put("tx_trx_amount", 0);
+                    objTx.put("tx_token_amount", 0);
+                  }
+                } else {
+                  if (selector.equals("Buy")) {
+                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
+                  }
+                }
+
+                objAttacker.add(objTx);
+              } else {
+                JSONObject objTx = new JSONObject();
+
+                String selector = absSelector(triggerSmartContract);
+                objTx.put("selector", selector);
+
+                objTx.put("ret", transaction.getRet(0).getContractRet().name());
+
+                long energyFee = transactionInfo.getReceipt().getNetFee();
+                long netFee = transactionInfo.getReceipt().getEnergyFee();
+                objTx.put("netFee", netFee);
+                objTx.put("energyFee", energyFee);
+
+                objTx.put("block_num", blockCapsule.getNum());
+                objTx.put("block_time", blockCapsule.getTimeStamp());
+                objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
+
+                objTx.put("tx_index", txIndex);
+                objTx.put("tx_expiration", transaction.getRawData().getExpiration());
+                objTx.put("token", token);
+
+                if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
+                  Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
+                  if (pair != null) {
+                    objTx.put("tx_trx_amount", pair.getLeft().longValue());
+                    objTx.put("tx_token_amount", pair.getRight().longValue());
+                  } else {
+                    objTx.put("tx_trx_amount", 0);
+                    objTx.put("tx_token_amount", 0);
+                  }
+                } else {
+                  if (selector.equals("Buy")) {
+                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
+                  }
+                }
+
+                objNormal.add(objTx);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    JSONObject objItem = new JSONObject();
+    objItem.put("attacker", objAttacker);
+    objItem.put("victim", objNormal);
+    System.out.println(objItem.toJSONString());
+  }
+
+  private static Pair<BigDecimal, BigDecimal> absTokenAmount(Protocol.TransactionInfo transactionInfo) throws IOException {
+    Map<String, String> pairToTokenMap = populateMap();
+
+    for (Protocol.TransactionInfo.Log log : transactionInfo.getLogList()) {
+      if (!Arrays.equals(log.getTopics(0).toByteArray(), SWAP_TOPIC)) {
+        continue;
+      }
+      // Swap topic
+      String logData = Hex.toHexString(log.getData().toByteArray());
+      BigInteger amount0In = new BigInteger(logData.substring(0, 64), 16);
+      BigInteger amount1In = new BigInteger(logData.substring(64, 128), 16);
+      BigInteger amount0Out = new BigInteger(logData.substring(128, 192), 16);
+      BigInteger amount1Out = new BigInteger(logData.substring(192, 256), 16);
+
+      String pair = Hex.toHexString(log.getAddress().toByteArray());
+      String token = pairToTokenMap.get(pair);
+      boolean tokenNull = token == null;
+      if (tokenNull) {
+        for (Protocol.TransactionInfo.Log log2 : transactionInfo.getLogList()) {
+          if (Arrays.equals(TRANSFER_TOPIC, log2.getTopics(0).toByteArray())
+                  && !Arrays.equals(log2.getAddress().toByteArray(), WTRX_HEX)) {
+            token = Hex.toHexString(log2.getAddress().toByteArray());
+            break;
+          }
+        }
+      }
+      boolean smaller = smallerToWtrx(token, WTRX);
+      boolean isBuy =
+              ((smaller && amount0Out.compareTo(BigInteger.ZERO) > 0)
+                      || (!smaller && amount1Out.compareTo(BigInteger.ZERO) > 0));
+
+      BigDecimal trxAmount;
+      BigDecimal tokenAmount;
+      if (isBuy) {
+        if (smaller) {
+          trxAmount =
+                  new BigDecimal(amount1In).divide(TRX_DIVISOR, 6, RoundingMode.HALF_EVEN);
+          tokenAmount =
+                  new BigDecimal(amount0Out).divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN);
+        } else {
+          trxAmount =
+                  new BigDecimal(amount0In).divide(TRX_DIVISOR, 6, RoundingMode.HALF_EVEN);
+          tokenAmount =
+                  new BigDecimal(amount1Out).divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN);
+        }
+      } else {
+        if (smaller) {
+          trxAmount =
+                  new BigDecimal(amount1Out).divide(TRX_DIVISOR, 6, RoundingMode.HALF_EVEN);
+          tokenAmount =
+                  new BigDecimal(amount0In).divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN);
+        } else {
+          trxAmount =
+                  new BigDecimal(amount0Out).divide(TRX_DIVISOR, 6, RoundingMode.HALF_EVEN);
+          tokenAmount =
+                  new BigDecimal(amount1In).divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN);
+        }
+      }
+      return Pair.of(trxAmount, tokenAmount);
+    }
+    return null;
   }
 
   private static void blockTransStat(
