@@ -393,7 +393,7 @@ public class FullNode {
         break;
       }
       System.out.println(blockNum);
-      if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
+      if (blockTokenMap.containsKey(String.valueOf(blockNum))) {
         combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry,retIterator, blockIterator);
         return;
       }
@@ -403,7 +403,7 @@ public class FullNode {
   private static void combineSingleAttackBlocks( HashMap<String, HashSet<String>> blockTokenMap, long blockNum, Map.Entry<byte[], byte[]> retEntry, Map.Entry<byte[], byte[]> blockEntry, DBIterator retIterator, DBIterator blockIterator) throws BadItemException, IOException {
     JSONArray objAttacker = new JSONArray();
     JSONArray objNormal = new JSONArray();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 1; i++) {
       if (i > 0) {
         if (retIterator.hasNext() && blockIterator.hasNext()) {
           retEntry = retIterator.next();
