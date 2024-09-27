@@ -366,8 +366,11 @@ public class FullNode {
         blockTokenMap.get(mKey).add(jsonObject.getString("token"));
       }
     } catch (IOException e) {
-        throw new RuntimeException(e);
+      System.out.println(e.getMessage());
+//        throw new RuntimeException(e);
     }
+
+    System.out.println(blockTokenMap);
 
     DBIterator retIterator =
             (DBIterator) ChainBaseManager.getInstance().getTransactionRetStore().getDb().iterator();
