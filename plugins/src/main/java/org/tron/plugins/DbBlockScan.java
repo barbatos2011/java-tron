@@ -117,6 +117,31 @@ public class DbBlockScan implements Callable<Integer> {
         return 0;
     }
 
+
+    private void statisticAttackByType(byte[] k, byte[] v, HashMap<Protocol.Transaction.Contract.ContractType, Integer> countMap) {
+        try {
+            Protocol.Block block = Protocol.Block.parseFrom(v);
+            long num = block.getBlockHeader().getRawData().getNumber();
+            List<Protocol.Transaction> list = block.getTransactionsList().stream()
+                    .filter(trans -> trans.getSignatureCount() > 0).collect(Collectors.toList());
+            list.forEach(transaction -> {
+
+
+
+                Protocol.Transaction.Contract.ContractType type =
+                        transaction.getRawData().getContract(0).getType();
+                if (!countMap.containsKey(type)) {
+                    countMap.put(type, 1);
+                } else {
+                    countMap.put(type, countMap.get(type) + 1);
+                }
+            });
+        } catch (InvalidProtocolBufferException e) {
+            logger.error("{},{}", k, v);
+        }
+    }
+
+
     private void statisticByType(byte[] k, byte[] v, HashMap<Protocol.Transaction.Contract.ContractType, Integer> countMap) {
         try {
             Protocol.Block block = Protocol.Block.parseFrom(v);
