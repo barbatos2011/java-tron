@@ -468,6 +468,7 @@ public class FullNode {
 
                             objTx.put("tx_hash", Hex.toHexString(tx.getTransactionId().getBytes()));
                             objTx.put("tx_index", txIndex);
+                            objTx.put("tx_sender", ownerAddress);
                             objTx.put("tx_expiration", transaction.getRawData().getExpiration());
                             objTx.put("tx_timestamp", transaction.getRawData().getTimestamp());
 
@@ -503,7 +504,6 @@ public class FullNode {
                                 // attacker
                                 objAttacker.add(objTx);
                             } else {
-
                                 objNormal.add(objTx);
                             }
                         }
