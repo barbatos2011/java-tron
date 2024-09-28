@@ -433,16 +433,13 @@ public class FullNode {
             TransactionRetCapsule transactionRetCapsule = new TransactionRetCapsule(value);
             BlockCapsule blockCapsule = new BlockCapsule(blockEntry.getValue());
             Map<String, TransactionCapsule> txCallerMap = new HashMap<>();
-            System.out.println("-- job start1 --");
             for (TransactionCapsule tx : blockCapsule.getTransactions()) {
                 txCallerMap.put(tx.getTransactionId().toString(), tx);
             }
-            System.out.println("-- job start2 --");
             int txIndex = 0;
             for (Protocol.TransactionInfo transactionInfo :
                     transactionRetCapsule.getInstance().getTransactioninfoList()) {
                 txIndex++;
-                System.out.println("-- job start3 --");
 
                 byte[] txId = transactionInfo.getId().toByteArray();
                 TransactionCapsule tx = txCallerMap.get(Hex.toHexString(txId));
@@ -451,15 +448,11 @@ public class FullNode {
                 Protocol.Transaction.Contract.ContractType type =
                         transaction.getRawData().getContract(0).getType();
                 if (type == Protocol.Transaction.Contract.ContractType.TriggerSmartContract) {
-                    System.out.println("-- job start11 --");
-
                     SmartContractOuterClass.TriggerSmartContract contract = ContractCapsule.getTriggerContractFromTransaction(transaction);
                     assert contract != null;
-                    System.out.println("-- job start12 --");
                     String ownerAddress = StringUtil.encode58Check(contract.getOwnerAddress().toByteArray());
                     String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
                     if (CONTRACT_ADDRESS.equals(contractAddress)) {
-                        System.out.println("-- job start 13 --");
                         SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
                                 tx.getInstance()
                                         .getRawData()
@@ -468,15 +461,15 @@ public class FullNode {
                                         .unpack(SmartContractOuterClass.TriggerSmartContract.class);
 
                         String token = absToken(triggerSmartContract);
-                        System.out.println("-- job start 113 --");
                         if ((blockTokenMap.containsKey(String.valueOf(blockNum))) && blockTokenMap.get(String.valueOf(blockNum)).contains(token)) {
-                            System.out.println("-- job start 14 --");
-
                             JSONObject objTx = new JSONObject();
                             String selector = absSelector(triggerSmartContract);
                             objTx.put("selector", selector);
 
                             objTx.put("tx_hash", Hex.toHexString(tx.getTransactionId().getBytes()));
+                            objTx.put("tx_index", txIndex);
+                            objTx.put("tx_expiration", transaction.getRawData().getExpiration());
+                            objTx.put("tx_timestamp", transaction.getRawData().getTimestamp());
 
                             objTx.put("ret", transaction.getRet(0).getContractRet().name());
 
@@ -485,79 +478,38 @@ public class FullNode {
                             objTx.put("netFee", netFee);
                             objTx.put("energyFee", energyFee);
 
+                            objTx.put("token", token);
+
+                            objTx.put("block_num", blockCapsule.getNum());
+                            objTx.put("block_time", blockCapsule.getTimeStamp());
+                            objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
+
+                            if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
+                                Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
+                                if (pair != null) {
+                                    objTx.put("tx_trx_amount", pair.getLeft().longValue());
+                                    objTx.put("tx_token_amount", pair.getRight().longValue());
+                                } else {
+                                    objTx.put("tx_trx_amount", 0);
+                                    objTx.put("tx_token_amount", 0);
+                                }
+                            } else {
+                                if (selector.equals("Buy")) {
+                                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
+                                }
+                            }
+
                             if (OWNER_ADDRESS.equals(ownerAddress)) {
                                 // attacker
-                                System.out.println("-- job start 114 --");
-
-                                objTx.put("block_num", blockCapsule.getNum());
-                                objTx.put("block_time", blockCapsule.getTimeStamp());
-                                objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
-
-                                objTx.put("tx_index", txIndex);
-                                objTx.put("tx_expiration", transaction.getRawData().getExpiration());
-                                objTx.put("tx_timestamp", transaction.getRawData().getTimestamp());
-
-                                objTx.put("token", token);
-
-                                if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
-                                    Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
-                                    if (pair != null) {
-                                        objTx.put("tx_trx_amount", pair.getLeft().longValue());
-                                        objTx.put("tx_token_amount", pair.getRight().longValue());
-                                    } else {
-                                        objTx.put("tx_trx_amount", 0);
-                                        objTx.put("tx_token_amount", 0);
-                                    }
-                                } else {
-                                    if (selector.equals("Buy")) {
-                                        objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
-                                    }
-                                }
-                                System.out.println("-- job start 124 --");
-
                                 objAttacker.add(objTx);
                             } else {
-                                System.out.println("-- job start 134 --");
-
-                                objTx.put("block_num", blockCapsule.getNum());
-                                objTx.put("block_time", blockCapsule.getTimeStamp());
-                                objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
-
-                                objTx.put("tx_index", txIndex);
-                                objTx.put("tx_expiration", transaction.getRawData().getExpiration());
-                                objTx.put("token", token);
-
-//                  System.out.println("-- job start 144 --");
-//                  System.out.println(transaction.getRetCount());
-
-                                if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
-                                    System.out.println("-- job start 164 --");
-                                    Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
-                                    if (pair != null) {
-                                        objTx.put("tx_trx_amount", pair.getLeft().longValue());
-                                        objTx.put("tx_token_amount", pair.getRight().longValue());
-                                    } else {
-                                        objTx.put("tx_trx_amount", 0);
-                                        objTx.put("tx_token_amount", 0);
-                                    }
-                                } else {
-                                    System.out.println("-- job start 174 --");
-
-                                    if (selector.equals("Buy")) {
-                                        objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
-                                    }
-                                }
-                                System.out.println("-- job start 154 --");
 
                                 objNormal.add(objTx);
                             }
                         }
-                        System.out.println("-- job start 123 --");
                     }
                 }
-                System.out.println("-- job start4 --");
             }
-            System.out.println("-- job start5 --");
         }
 
         JSONObject objItem = new JSONObject();
