@@ -169,9 +169,9 @@ public class FullNode {
         try {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
 
-//      filterTransactionAndToken();
             System.out.println("-- job start --");
-            findAttackTransactions();
+           filterTransactionAndToken();
+//            findAttackTransactions();
             System.out.println("-- job end --");
         } catch (Exception e) {
             logger.error("blockTransStat=>Exception:{}", e);
@@ -270,6 +270,10 @@ public class FullNode {
                             } else {
                                 obj.put("token", "");
                             }
+
+                            obj.put("res", transaction.getRet(0).getContractRet().name());
+                            obj.put("sr",  StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
+
                             System.out.println(obj.toJSONString());
                         }
                     }
@@ -522,8 +526,6 @@ public class FullNode {
         Map<String, String> pairToTokenMap = populateMap();
 
         for (Protocol.TransactionInfo.Log log : transactionInfo.getLogList()) {
-            System.out.println("-- job start 17 --");
-
             if (!Arrays.equals(log.getTopics(0).toByteArray(), SWAP_TOPIC)) {
                 continue;
             }
@@ -537,11 +539,8 @@ public class FullNode {
             String pair = Hex.toHexString(log.getAddress().toByteArray());
             String token = pairToTokenMap.get(pair);
             boolean tokenNull = token == null;
-            System.out.println("-- job start 117 --");
 
             if (tokenNull) {
-                System.out.println("-- job start 127 --");
-
                 for (Protocol.TransactionInfo.Log log2 : transactionInfo.getLogList()) {
                     if (Arrays.equals(TRANSFER_TOPIC, log2.getTopics(0).toByteArray())
                             && !Arrays.equals(log2.getAddress().toByteArray(), WTRX_HEX)) {
@@ -550,13 +549,11 @@ public class FullNode {
                     }
                 }
             }
-            System.out.println("-- job start 137 --");
 
             boolean smaller = smallerToWtrx(token, WTRX);
             boolean isBuy =
                     ((smaller && amount0Out.compareTo(BigInteger.ZERO) > 0)
                             || (!smaller && amount1Out.compareTo(BigInteger.ZERO) > 0));
-            System.out.println("-- job start 147 --");
 
             BigDecimal trxAmount;
             BigDecimal tokenAmount;
@@ -585,8 +582,6 @@ public class FullNode {
                             new BigDecimal(amount1In).divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN);
                 }
             }
-            System.out.println("-- job start 167 --");
-
             return Pair.of(trxAmount, tokenAmount);
         }
         return null;
