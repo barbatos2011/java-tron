@@ -399,7 +399,7 @@ public class FullNode {
             System.out.println(blockNum);
             if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
                 combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry, retIterator, blockIterator);
-                return;
+//                return;
             }
         }
     }
@@ -476,8 +476,8 @@ public class FullNode {
 
                             long energyFee = transactionInfo.getReceipt().getNetFee();
                             long netFee = transactionInfo.getReceipt().getEnergyFee();
-                            objTx.put("netFee", netFee);
-                            objTx.put("energyFee", energyFee);
+                            objTx.put("fee_net", netFee);
+                            objTx.put("fee_energy", energyFee);
 
                             objTx.put("token", token);
 
