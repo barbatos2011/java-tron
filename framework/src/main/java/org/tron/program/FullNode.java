@@ -541,7 +541,9 @@ public class FullNode {
             }
           }
         }
+        System.out.println("-- job start4 --");
       }
+      System.out.println("-- job start5 --");
     }
 
     JSONObject objItem = new JSONObject();
