@@ -529,9 +529,11 @@ public class FullNode {
                 objTx.put("tx_expiration", transaction.getRawData().getExpiration());
                 objTx.put("token", token);
                   System.out.println("-- job start 144 --");
+                  System.out.println(transaction.getRetCount());
 
-//                if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
-//                  System.out.println("-- job start 164 --");
+
+                  if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
+                  System.out.println("-- job start 164 --");
 //                  Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
 //                  if (pair != null) {
 //                    objTx.put("tx_trx_amount", pair.getLeft().longValue());
@@ -540,13 +542,13 @@ public class FullNode {
 //                    objTx.put("tx_trx_amount", 0);
 //                    objTx.put("tx_token_amount", 0);
 //                  }
-//                } else {
-//                  System.out.println("-- job start 174 --");
-//
-//                  if (selector.equals("Buy")) {
-//                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
-//                  }
-//                }
+                } else {
+                  System.out.println("-- job start 174 --");
+
+                  if (selector.equals("Buy")) {
+                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
+                  }
+                }
                   System.out.println("-- job start 154 --");
 
                 objNormal.add(objTx);
