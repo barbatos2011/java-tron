@@ -459,7 +459,8 @@ public class FullNode {
             System.out.println("-- job start 13 --");
 
             String token = absToken(tx);
-            if (blockTokenMap.get(String.valueOf(blockNum+1)).contains(token)) {
+            System.out.println("-- job start 113 --");
+            if ((blockTokenMap.containsKey(String.valueOf(blockNum))) && blockTokenMap.get(String.valueOf(blockNum)).contains(token)) {
               System.out.println("-- job start 14 --");
 
               SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
@@ -546,6 +547,8 @@ public class FullNode {
                 objNormal.add(objTx);
               }
             }
+            System.out.println("-- job start 123 --");
+
           }
         }
         System.out.println("-- job start4 --");
