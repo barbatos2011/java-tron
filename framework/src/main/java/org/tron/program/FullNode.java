@@ -175,6 +175,8 @@ public class FullNode {
       System.out.println("-- job end --");
     } catch (Exception e) {
       logger.error("blockTransStat=>Exception:{}", e);
+      System.out.println(e.getMessage());
+      System.out.println("-- job end --");
     }
     logger.info("blockTransStat=>end");
   }
