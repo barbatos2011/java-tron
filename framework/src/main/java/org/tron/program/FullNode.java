@@ -172,6 +172,7 @@ public class FullNode {
 //      filterTransactionAndToken();
       System.out.println("-- job start --");
       findAttackTransactions();
+      System.out.println("-- job end --");
     } catch (Exception e) {
       logger.error("blockTransStat=>Exception:{}", e);
     }
@@ -447,14 +448,20 @@ public class FullNode {
         Protocol.Transaction.Contract.ContractType type =
                 transaction.getRawData().getContract(0).getType();
         if (type == Protocol.Transaction.Contract.ContractType.TriggerSmartContract) {
+          System.out.println("-- job start11 --");
+
           SmartContractOuterClass.TriggerSmartContract contract = ContractCapsule.getTriggerContractFromTransaction(transaction);
             assert contract != null;
+          System.out.println("-- job start12 --");
           String ownerAddress = StringUtil.encode58Check(contract.getOwnerAddress().toByteArray());
           String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
           if (CONTRACT_ADDRESS.equals(contractAddress)) {
+            System.out.println("-- job start 13 --");
 
             String token = absToken(tx);
             if (blockTokenMap.get(String.valueOf(blockNum+1)).contains(token)) {
+              System.out.println("-- job start 14 --");
+
               SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
                       tx.getInstance()
                               .getRawData()
