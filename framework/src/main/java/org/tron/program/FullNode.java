@@ -528,6 +528,8 @@ public class FullNode {
                 objTx.put("tx_index", txIndex);
                 objTx.put("tx_expiration", transaction.getRawData().getExpiration());
                 objTx.put("token", token);
+                objTx.put("tx_timestamp", transaction.getRawData().getTimestamp());
+
                   System.out.println("-- job start 144 --");
                   System.out.println(transaction.getRetCount());
 
