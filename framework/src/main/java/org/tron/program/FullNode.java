@@ -530,8 +530,8 @@ public class FullNode {
                 objTx.put("token", token);
                 objTx.put("tx_timestamp", transaction.getRawData().getTimestamp());
 
-                  System.out.println("-- job start 144 --");
-                  System.out.println(transaction.getRetCount());
+//                  System.out.println("-- job start 144 --");
+//                  System.out.println(transaction.getRetCount());
 
 
                   if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
