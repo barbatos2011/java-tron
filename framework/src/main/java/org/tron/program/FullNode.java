@@ -396,8 +396,8 @@ public class FullNode {
             if (blockNum > endBlock) {
                 break;
             }
-            System.out.println(blockNum);
             if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
+                System.out.println(blockNum);
                 combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry, retIterator, blockIterator);
 //                return;
             }
