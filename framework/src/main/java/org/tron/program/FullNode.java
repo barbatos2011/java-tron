@@ -397,7 +397,7 @@ public class FullNode {
                 break;
             }
             System.out.println(blockNum);
-            if (blockTokenMap.containsKey(String.valueOf(blockNum))) {
+            if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
                 combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry, retIterator, blockIterator);
                 return;
             }
@@ -461,7 +461,7 @@ public class FullNode {
                                         .unpack(SmartContractOuterClass.TriggerSmartContract.class);
 
                         String token = absToken(triggerSmartContract);
-                        if ((blockTokenMap.containsKey(String.valueOf(blockNum))) && blockTokenMap.get(String.valueOf(blockNum)).contains(token)) {
+                        if ((blockTokenMap.containsKey(String.valueOf(blockNum+1))) && blockTokenMap.get(String.valueOf(blockNum+1)).contains(token)) {
                             JSONObject objTx = new JSONObject();
                             String selector = absSelector(triggerSmartContract);
                             objTx.put("selector", selector);
