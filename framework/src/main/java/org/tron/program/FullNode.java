@@ -404,6 +404,8 @@ public class FullNode {
     JSONArray objAttacker = new JSONArray();
     JSONArray objNormal = new JSONArray();
     for (int i = 0; i < 1; i++) {
+      System.out.println("-- job start0 --");
+
       if (i > 0) {
         if (retIterator.hasNext() && blockIterator.hasNext()) {
           retEntry = retIterator.next();
@@ -427,13 +429,17 @@ public class FullNode {
       TransactionRetCapsule transactionRetCapsule = new TransactionRetCapsule(value);
       BlockCapsule blockCapsule = new BlockCapsule(blockEntry.getValue());
       Map<String, TransactionCapsule> txCallerMap = new HashMap<>();
+      System.out.println("-- job start1 --");
       for (TransactionCapsule tx : blockCapsule.getTransactions()) {
         txCallerMap.put(tx.getTransactionId().toString(), tx);
       }
+      System.out.println("-- job start2 --");
       int txIndex = 0;
       for (Protocol.TransactionInfo transactionInfo :
               transactionRetCapsule.getInstance().getTransactioninfoList()) {
         txIndex++;
+        System.out.println("-- job start3 --");
+
         byte[] txId = transactionInfo.getId().toByteArray();
         TransactionCapsule tx = txCallerMap.get(Hex.toHexString(txId));
 
