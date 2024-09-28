@@ -531,6 +531,7 @@ public class FullNode {
                   System.out.println("-- job start 144 --");
 
                 if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
+                  System.out.println("-- job start 164 --");
                   Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
                   if (pair != null) {
                     objTx.put("tx_trx_amount", pair.getLeft().longValue());
@@ -540,6 +541,8 @@ public class FullNode {
                     objTx.put("tx_token_amount", 0);
                   }
                 } else {
+                  System.out.println("-- job start 174 --");
+
                   if (selector.equals("Buy")) {
                     objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
                   }
