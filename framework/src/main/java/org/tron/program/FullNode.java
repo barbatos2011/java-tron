@@ -253,7 +253,13 @@ public class FullNode {
           String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
           if (OWNER_ADDRESS.equals(ownerAddress)) {
             if (CONTRACT_ADDRESS.equals(contractAddress)) {
-              String token = absToken(tx);
+              SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
+                      tx.getInstance()
+                              .getRawData()
+                              .getContract(0)
+                              .getParameter()
+                              .unpack(SmartContractOuterClass.TriggerSmartContract.class);
+              String token = absToken(triggerSmartContract);
               JSONObject obj = new JSONObject();
               obj.put("tx", Hex.toHexString(tx.getTransactionId().getBytes()));
               obj.put("block_num", blockCapsule.getNum());
