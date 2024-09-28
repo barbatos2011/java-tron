@@ -270,13 +270,7 @@ public class FullNode {
     }
   }
 
-  private static String absToken(TransactionCapsule tx) throws InvalidProtocolBufferException {
-    SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
-            tx.getInstance()
-                    .getRawData()
-                    .getContract(0)
-                    .getParameter()
-                    .unpack(SmartContractOuterClass.TriggerSmartContract.class);
+  private static String absToken(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) throws InvalidProtocolBufferException {
     String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
 
     String token = null;
@@ -457,25 +451,25 @@ public class FullNode {
           String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
           if (CONTRACT_ADDRESS.equals(contractAddress)) {
             System.out.println("-- job start 13 --");
+            SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
+                    tx.getInstance()
+                            .getRawData()
+                            .getContract(0)
+                            .getParameter()
+                            .unpack(SmartContractOuterClass.TriggerSmartContract.class);
 
-            String token = absToken(tx);
+            String token = absToken(triggerSmartContract);
             System.out.println("-- job start 113 --");
             if ((blockTokenMap.containsKey(String.valueOf(blockNum))) && blockTokenMap.get(String.valueOf(blockNum)).contains(token)) {
               System.out.println("-- job start 14 --");
 
-              SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
-                      tx.getInstance()
-                              .getRawData()
-                              .getContract(0)
-                              .getParameter()
-                              .unpack(SmartContractOuterClass.TriggerSmartContract.class);
-
-              if (OWNER_ADDRESS.equals(ownerAddress)) {
-                // attacker
                 JSONObject objTx = new JSONObject();
-
                 String selector = absSelector(triggerSmartContract);
                 objTx.put("selector", selector);
+
+                if (OWNER_ADDRESS.equals(ownerAddress)) {
+                // attacker
+                    System.out.println("-- job start 114 --");
 
                 objTx.put("ret", transaction.getRet(0).getContractRet().name());
 
@@ -506,13 +500,11 @@ public class FullNode {
                     objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
                   }
                 }
+                System.out.println("-- job start 124 --");
 
                 objAttacker.add(objTx);
               } else {
-                JSONObject objTx = new JSONObject();
-
-                String selector = absSelector(triggerSmartContract);
-                objTx.put("selector", selector);
+                  System.out.println("-- job start 134 --");
 
                 objTx.put("ret", transaction.getRet(0).getContractRet().name());
 
@@ -528,6 +520,7 @@ public class FullNode {
                 objTx.put("tx_index", txIndex);
                 objTx.put("tx_expiration", transaction.getRawData().getExpiration());
                 objTx.put("token", token);
+                  System.out.println("-- job start 144 --");
 
                 if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
                   Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
@@ -543,12 +536,12 @@ public class FullNode {
                     objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
                   }
                 }
+                  System.out.println("-- job start 154 --");
 
                 objNormal.add(objTx);
               }
             }
             System.out.println("-- job start 123 --");
-
           }
         }
         System.out.println("-- job start4 --");
