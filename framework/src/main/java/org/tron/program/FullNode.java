@@ -227,8 +227,10 @@ public class FullNode {
     }
 
     private static void filterTransactionAndToken() throws BadItemException, InvalidProtocolBufferException {
-        long startBlock = 64488295L;
-        long endBlock = 65352295L;
+//        long startBlock = 64488295L;
+        long startBlock = 65571172L;
+//        long endBlock = 65352295L;
+        long endBlock = 65622473L;
         final String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
         final String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
 
