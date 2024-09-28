@@ -407,7 +407,7 @@ public class FullNode {
     private static void combineSingleAttackBlocks(HashMap<String, HashSet<String>> blockTokenMap, long blockNum, Map.Entry<byte[], byte[]> retEntry, Map.Entry<byte[], byte[]> blockEntry, DBIterator retIterator, DBIterator blockIterator) throws BadItemException, IOException {
         JSONArray objAttacker = new JSONArray();
         JSONArray objNormal = new JSONArray();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 3; i++) {
             System.out.println("-- job start0 --");
 
             if (i > 0) {
