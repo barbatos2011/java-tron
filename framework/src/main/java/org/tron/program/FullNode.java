@@ -380,7 +380,7 @@ public class FullNode {
 //        throw new RuntimeException(e);
         }
 
-        System.out.println(blockTokenMap);
+//        System.out.println(blockTokenMap);
 
         DBIterator retIterator =
                 (DBIterator) ChainBaseManager.getInstance().getTransactionRetStore().getDb().iterator();
@@ -403,7 +403,7 @@ public class FullNode {
                 break;
             }
             if (blockTokenMap.containsKey(String.valueOf(blockNum+1))) {
-                System.out.println(blockNum);
+//                System.out.println(blockNum);
                 combineSingleAttackBlocks(blockTokenMap, blockNum, retEntry, blockEntry, retIterator, blockIterator);
 //                return;
             }
@@ -414,7 +414,6 @@ public class FullNode {
         JSONArray objAttacker = new JSONArray();
         JSONArray objNormal = new JSONArray();
         for (int i = 0; i < 3; i++) {
-            System.out.println("-- job start0 --");
 
             if (i > 0) {
                 if (retIterator.hasNext() && blockIterator.hasNext()) {
