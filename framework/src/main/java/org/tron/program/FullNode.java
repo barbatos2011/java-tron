@@ -61,6 +61,50 @@ import org.tron.protos.contract.SmartContractOuterClass;
 @Slf4j(topic = "app")
 public class FullNode {
 
+    // 发射前
+    private static byte[] TOKEN_PURCHASE_TOPIC =
+            Hex.decode("63abb62535c21a5d221cf9c15994097b8880cc986d82faf80f57382b998dbae5");
+    private static byte[] TOKEN_SOLD_TOPIC =
+            Hex.decode("9387a595ac4be9038bbb9751abad8baa3dcf219dd9e19abb81552bd521fe3546");
+    private static byte[] TRX_RECEIVED =
+            Hex.decode("1bab02886c659969cbb004cc17dc19be19f193323a306e26c669bedb29c651f7");
+    private static String PUMP_BUY_METHOD_1 = "1cc2c911";
+    private static String PUMP_BUY_METHOD_2 = "2f70d762";
+    private static String PUMP_SELL_METHOD = "d19aa2b9";
+    private static byte[] SUNPUMP_LAUNCH = Hex.decode("41c22dd1b7bc7574e94563c8282f64b065bc07b2fa");
+    private static BigDecimal TRX_DIVISOR = new BigDecimal("1000000");
+    private static BigDecimal TOKEN_DIVISOR = new BigDecimal("1000000000000000000");
+
+    // 发射后
+    private static String SWAP_BUY_METHOD_1 = "fb3bdb41"; // swapETHForExactTokens
+    private static String SWAP_BUY_METHOD_2 = "7ff36ab5";
+    private static String SWAP_BUY_METHOD_3 =
+            "b6f9de95"; // swapExactETHForTokensSupportingFeeOnTransferTokens
+    private static String SWAP_SELL_METHOD_1 = "18cbafe5";
+    private static String SWAP_SELL_METHOD_2 = "4a25d94a"; // swapTokensForExactETH
+    private static String SWAP_SELL_METHOD_3 =
+            "791ac947"; // swapExactTokensForETHSupportingFeeOnTransferTokens
+    private static String SWAP_METHOD = "38ed1739";
+    private static byte[] SWAP_ROUTER = Hex.decode("41fF7155b5df8008fbF3834922B2D52430b27874f5");
+    private static byte[] SUNSWAP_ROUTER = Hex.decode("41e95812D8D5B5412D2b9F3A4D5a87CA15C5c51F33");
+    private static byte[] TRANSFER_TOPIC =
+            Hex.decode("ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef");
+    private static byte[] SWAP_TOPIC =
+            Hex.decode("d78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822");
+    private static byte[] WTRX_HEX = Hex.decode("891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18");
+    private static String WTRX = "891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18";
+    private static String WTRX41 = "41891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18";
+    private static String USDT = "a614f803B6FD780986A42c78Ec9c7f77e6DeD13C".toLowerCase();
+
+    private static String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
+    private static String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
+
+    private static String get41Addr(String hexAddr) {
+        if (!hexAddr.startsWith("41")) {
+            return "41" + hexAddr;
+        }
+        return hexAddr;
+    }
 
     public static void load(String path) {
         try {
@@ -170,8 +214,8 @@ public class FullNode {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
 
             System.out.println("-- job start --");
-//           filterTransactionAndToken();
-            findAttackTransactions();
+           filterTransactionAndToken();
+//            findAttackTransactions();
             System.out.println("-- job end --");
         } catch (Exception e) {
             logger.error("blockTransStat=>Exception:{}", e);
@@ -179,51 +223,6 @@ public class FullNode {
             System.out.println("-- job end --");
         }
         logger.info("blockTransStat=>end");
-    }
-
-    // 发射前
-    private static byte[] TOKEN_PURCHASE_TOPIC =
-            Hex.decode("63abb62535c21a5d221cf9c15994097b8880cc986d82faf80f57382b998dbae5");
-    private static byte[] TOKEN_SOLD_TOPIC =
-            Hex.decode("9387a595ac4be9038bbb9751abad8baa3dcf219dd9e19abb81552bd521fe3546");
-    private static byte[] TRX_RECEIVED =
-            Hex.decode("1bab02886c659969cbb004cc17dc19be19f193323a306e26c669bedb29c651f7");
-    private static String PUMP_BUY_METHOD_1 = "1cc2c911";
-    private static String PUMP_BUY_METHOD_2 = "2f70d762";
-    private static String PUMP_SELL_METHOD = "d19aa2b9";
-    private static byte[] SUNPUMP_LAUNCH = Hex.decode("41c22dd1b7bc7574e94563c8282f64b065bc07b2fa");
-    private static BigDecimal TRX_DIVISOR = new BigDecimal("1000000");
-    private static BigDecimal TOKEN_DIVISOR = new BigDecimal("1000000000000000000");
-
-    // 发射后
-    private static String SWAP_BUY_METHOD_1 = "fb3bdb41"; // swapETHForExactTokens
-    private static String SWAP_BUY_METHOD_2 = "7ff36ab5";
-    private static String SWAP_BUY_METHOD_3 =
-            "b6f9de95"; // swapExactETHForTokensSupportingFeeOnTransferTokens
-    private static String SWAP_SELL_METHOD_1 = "18cbafe5";
-    private static String SWAP_SELL_METHOD_2 = "4a25d94a"; // swapTokensForExactETH
-    private static String SWAP_SELL_METHOD_3 =
-            "791ac947"; // swapExactTokensForETHSupportingFeeOnTransferTokens
-    private static String SWAP_METHOD = "38ed1739";
-    private static byte[] SWAP_ROUTER = Hex.decode("41fF7155b5df8008fbF3834922B2D52430b27874f5");
-    private static byte[] SUNSWAP_ROUTER = Hex.decode("41e95812D8D5B5412D2b9F3A4D5a87CA15C5c51F33");
-    private static byte[] TRANSFER_TOPIC =
-            Hex.decode("ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef");
-    private static byte[] SWAP_TOPIC =
-            Hex.decode("d78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822");
-    private static byte[] WTRX_HEX = Hex.decode("891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18");
-    private static String WTRX = "891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18";
-    private static String WTRX41 = "41891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18";
-    private static String USDT = "a614f803B6FD780986A42c78Ec9c7f77e6DeD13C".toLowerCase();
-
-    private static String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
-    private static String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
-
-    private static String get41Addr(String hexAddr) {
-        if (!hexAddr.startsWith("41")) {
-            return "41" + hexAddr;
-        }
-        return hexAddr;
     }
 
     private static void filterTransactionAndToken() throws BadItemException, InvalidProtocolBufferException {
