@@ -170,8 +170,8 @@ public class FullNode {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
 
             System.out.println("-- job start --");
-           filterTransactionAndToken();
-//            findAttackTransactions();
+//           filterTransactionAndToken();
+            findAttackTransactions();
             System.out.println("-- job end --");
         } catch (Exception e) {
             logger.error("blockTransStat=>Exception:{}", e);
@@ -227,10 +227,11 @@ public class FullNode {
     }
 
     private static void filterTransactionAndToken() throws BadItemException, InvalidProtocolBufferException {
-//        long startBlock = 64488295L;
+        long startBlock = 64517095L;
 //        long endBlock = 65352295L;
-        long startBlock = 65626700L;
-        long endBlock = 65627662L;
+        long endBlock = 64805095L;
+//        long startBlock = 65626700L;
+//        long endBlock = 65627662L;
         final String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
         final String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
 
@@ -492,7 +493,7 @@ public class FullNode {
                             objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
 
                             if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
-                                Pair<BigDecimal, BigDecimal> pair = absTokenAmount(transactionInfo);
+                                Pair<BigDecimal, BigDecimal> pair = absTokenAmountForSuccess(transactionInfo);
                                 if (pair != null) {
                                     objTx.put("tx_trx_amount", pair.getLeft().longValue());
                                     objTx.put("tx_token_amount", pair.getRight().longValue());
@@ -501,8 +502,13 @@ public class FullNode {
                                     objTx.put("tx_token_amount", 0);
                                 }
                             } else {
+                                BigDecimal tokenAmount = absTokenAmountForFailed(triggerSmartContract);
                                 if (selector.equals("Buy")) {
-                                    objTx.put("tx_trx_amount1", triggerSmartContract.getCallValue());
+                                    objTx.put("tx_trx_amount", triggerSmartContract.getCallValue());
+                                    objTx.put("tx_token_amount", tokenAmount.longValue());
+                                } else {
+                                    objTx.put("tx_trx_amount", 0);
+                                    objTx.put("tx_token_amount", tokenAmount.longValue());
                                 }
                             }
 
@@ -524,7 +530,7 @@ public class FullNode {
         System.out.println(objItem.toJSONString());
     }
 
-    private static Pair<BigDecimal, BigDecimal> absTokenAmount(Protocol.TransactionInfo transactionInfo) throws IOException {
+    private static Pair<BigDecimal, BigDecimal> absTokenAmountForSuccess(Protocol.TransactionInfo transactionInfo) throws IOException {
         Map<String, String> pairToTokenMap = populateMap();
 
         for (Protocol.TransactionInfo.Log log : transactionInfo.getLogList()) {
@@ -587,6 +593,28 @@ public class FullNode {
             return Pair.of(trxAmount, tokenAmount);
         }
         return null;
+    }
+
+    private static BigDecimal absTokenAmountForFailed(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) throws IOException {
+        String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
+
+        BigDecimal tokenAmount = BigDecimal.ZERO;
+        if (callData.startsWith(SWAP_SELL_METHOD_1)) {
+            if (callData.length() >= 392) {
+                tokenAmount =
+                        new BigDecimal(new BigInteger(callData.substring(8, 8 + 64), 16))
+                                .divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN); // token 个数
+            }
+        } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
+            tokenAmount =
+                    new BigDecimal(new BigInteger(callData.substring(8, 8 + 64), 16))
+                            .divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN); // token 个数
+        } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
+            tokenAmount =
+                    new BigDecimal(new BigInteger(callData.substring(8, 8 + 64), 16))
+                            .divide(TOKEN_DIVISOR, 18, RoundingMode.HALF_EVEN); // token 个数
+        }
+        return tokenAmount;
     }
 
     private static void blockTransStat(
