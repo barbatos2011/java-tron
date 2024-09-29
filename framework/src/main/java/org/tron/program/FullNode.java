@@ -256,7 +256,7 @@ public class FullNode {
                     assert contract != null;
                     String ownerAddress = StringUtil.encode58Check(contract.getOwnerAddress().toByteArray());
                     String contractAddress = StringUtil.encode58Check(contract.getContractAddress().toByteArray());
-                    if (OWNER_ADDRESS.equals(ownerAddress)) {
+//                    if (OWNER_ADDRESS.equals(ownerAddress)) {
                         if (CONTRACT_ADDRESS.equals(contractAddress)) {
                             SmartContractOuterClass.TriggerSmartContract triggerSmartContract =
                                     tx.getInstance()
@@ -276,10 +276,11 @@ public class FullNode {
 
                             obj.put("res", transaction.getRet(0).getContractRet().name());
                             obj.put("sr",  StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
+                            obj.put("sender", ownerAddress);
 
                             System.out.println(obj.toJSONString());
                         }
-                    }
+//                    }
                 }
             }
         }
