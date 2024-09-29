@@ -214,8 +214,8 @@ public class FullNode {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
 
             System.out.println("-- job start --");
-           filterTransactionAndToken();
-//            findAttackTransactions();
+//           filterTransactionAndToken();
+            findAttackTransactions();
             System.out.println("-- job end --");
         } catch (Exception e) {
             logger.error("blockTransStat=>Exception:{}", e);
