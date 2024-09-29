@@ -214,8 +214,8 @@ public class FullNode {
 //      blockTransStat(startBlock, endBlock, ownerAddr, contractAddr);
 
             System.out.println("-- job start --");
-//           filterTransactionAndToken();
-            findAttackTransactions();
+           filterTransactionAndToken();
+//            findAttackTransactions();
             System.out.println("-- job end --");
         } catch (Exception e) {
             logger.error("blockTransStat=>Exception:{}", e);
@@ -226,11 +226,12 @@ public class FullNode {
     }
 
     private static void filterTransactionAndToken() throws BadItemException, InvalidProtocolBufferException {
-        long startBlock = 64517095L;
-//        long endBlock = 65352295L;
-        long endBlock = 64805095L;
-//        long startBlock = 65626700L;
-//        long endBlock = 65627662L;
+//        long startBlock = 64517095L;
+////        long endBlock = 65352295L;
+//        long endBlock = 64805095L;
+
+        long startBlock = 65626700L;
+        long endBlock = 65647999L;
         final String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
         final String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
 
