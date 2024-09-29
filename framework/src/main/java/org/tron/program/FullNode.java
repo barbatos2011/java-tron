@@ -284,75 +284,85 @@ public class FullNode {
         }
     }
 
-    private static String absToken(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) throws InvalidProtocolBufferException {
+    private static String absToken(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) {
         String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
 
         String token = null;
-        if (callData.startsWith(SWAP_SELL_METHOD_1)) {
-            if (callData.length() < 392) {
-                token = get41Addr(callData.substring(8, 8 + 64).substring(24));
-            } else {
+        try {
+            if (callData.startsWith(SWAP_SELL_METHOD_1)) {
+                if (callData.length() < 392) {
+                    token = get41Addr(callData.substring(8, 8 + 64).substring(24));
+                } else {
+                    String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+                    String token2 = callData.substring(456).substring(24); // token2 wtrx
+                    token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+                }
+            } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
                 String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-                String token2 = callData.substring(456).substring(24); // token2 wtrx
+                String token2 =
+                        callData.length() >= 456
+                                ? callData.substring(456).substring(24)
+                                : null; // token2 wtrx
+                token =
+                        (token1.equalsIgnoreCase(WTRX) && token2 != null)
+                                ? get41Addr(token2)
+                                : get41Addr(token1);
+            } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
+                token = get41Addr(callData.substring(392, 392 + 64)); // token
+            } else if (callData.startsWith(SWAP_METHOD)) {
+                //                String data1 = callData.substring(8, 8 + 64); // trx amount
+                String token1 = callData.substring(392, 392 + 64).substring(24); // out token
+                String token2 = callData.substring(456, 456 + 64).substring(24); // in token
+                if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
+                    token = get41Addr(token2);
+                } else {
+                    token = get41Addr(token1);
+                }
+            } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
+                String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+                String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
                 token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+            } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
+                String token1 = callData.substring(392, 392 + 64).substring(24); // token1
+                String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
+                token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
+            } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
+                token = get41Addr(callData.substring(392, 392 + 64)); // token
             }
-        } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
-            String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-            String token2 =
-                    callData.length() >= 456
-                            ? callData.substring(456).substring(24)
-                            : null; // token2 wtrx
-            token =
-                    (token1.equalsIgnoreCase(WTRX) && token2 != null)
-                            ? get41Addr(token2)
-                            : get41Addr(token1);
-        } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
-            token = get41Addr(callData.substring(392, 392 + 64)); // token
-        } else if (callData.startsWith(SWAP_METHOD)) {
-            //                String data1 = callData.substring(8, 8 + 64); // trx amount
-            String token1 = callData.substring(392, 392 + 64).substring(24); // out token
-            String token2 = callData.substring(456, 456 + 64).substring(24); // in token
-            if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
-                token = get41Addr(token2);
-            } else {
-                token = get41Addr(token1);
-            }
-        } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
-            String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-            String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
-            token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
-        } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
-            String token1 = callData.substring(392, 392 + 64).substring(24); // token1
-            String token2 = callData.substring(328, 328 + 64).substring(24); // token2 wtrx
-            token = token1.equalsIgnoreCase(WTRX) ? get41Addr(token2) : get41Addr(token1);
-        } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
-            token = get41Addr(callData.substring(392, 392 + 64)); // token
+        } catch (Exception e) {
+            return null;
         }
+
         return token;
     }
 
     private static String absSelector(SmartContractOuterClass.TriggerSmartContract triggerSmartContract) throws InvalidProtocolBufferException {
         String callData = Hex.toHexString(triggerSmartContract.getData().toByteArray());
-        if (callData.startsWith(SWAP_SELL_METHOD_1)) {
-            return "Sell";
-        } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
-            return "Sell";
-        } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
-            return "Sell";
-        } else if (callData.startsWith(SWAP_METHOD)) {
-            String token1 = callData.substring(392, 392 + 64).substring(24); // out token
-            if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
-                return "Buy";
-            } else {
+        try {
+            if (callData.startsWith(SWAP_SELL_METHOD_1)) {
                 return "Sell";
+            } else if (callData.startsWith(SWAP_SELL_METHOD_2)) {
+                return "Sell";
+            } else if (callData.startsWith(SWAP_SELL_METHOD_3)) {
+                return "Sell";
+            } else if (callData.startsWith(SWAP_METHOD)) {
+                String token1 = callData.substring(392, 392 + 64).substring(24); // out token
+                if (token1.equalsIgnoreCase(WTRX) || token1.equalsIgnoreCase(USDT)) {
+                    return "Buy";
+                } else {
+                    return "Sell";
+                }
+            } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
+                return "Buy";
+            } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
+                return "Buy";
+            } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
+                return "Buy";
             }
-        } else if (callData.startsWith(SWAP_BUY_METHOD_1)) {
-            return "Buy";
-        } else if (callData.startsWith(SWAP_BUY_METHOD_2)) {
-            return "Buy";
-        } else if (callData.startsWith(SWAP_BUY_METHOD_3)) {
-            return "Buy";
+        } catch (Exception e) {
+            return "";
         }
+
         return "";
     }
 
@@ -491,22 +501,33 @@ public class FullNode {
                             objTx.put("block_sr", StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
 
                             if (transaction.getRet(0).getContractRet() == Protocol.Transaction.Result.contractResult.SUCCESS) {
-                                Pair<BigDecimal, BigDecimal> pair = absTokenAmountForSuccess(transactionInfo);
-                                if (pair != null) {
-                                    objTx.put("tx_trx_amount", pair.getLeft().longValue());
-                                    objTx.put("tx_token_amount", pair.getRight().longValue());
-                                } else {
+                                try {
+                                    Pair<BigDecimal, BigDecimal> pair = absTokenAmountForSuccess(transactionInfo);
+                                    if (pair != null) {
+                                        objTx.put("tx_trx_amount", pair.getLeft().longValue());
+                                        objTx.put("tx_token_amount", pair.getRight().longValue());
+                                    } else {
+                                        objTx.put("tx_trx_amount", 0);
+                                        objTx.put("tx_token_amount", 0);
+                                    }
+                                } catch (Exception e) {
                                     objTx.put("tx_trx_amount", 0);
                                     objTx.put("tx_token_amount", 0);
                                 }
+
                             } else {
-                                BigDecimal tokenAmount = absTokenAmountForFailed(triggerSmartContract);
-                                if (selector.equals("Buy")) {
-                                    objTx.put("tx_trx_amount", triggerSmartContract.getCallValue());
-                                    objTx.put("tx_token_amount", tokenAmount.longValue());
-                                } else {
+                                try {
+                                    BigDecimal tokenAmount = absTokenAmountForFailed(triggerSmartContract);
+                                    if (selector.equals("Buy")) {
+                                        objTx.put("tx_trx_amount", triggerSmartContract.getCallValue());
+                                        objTx.put("tx_token_amount", tokenAmount.longValue());
+                                    } else {
+                                        objTx.put("tx_trx_amount", 0);
+                                        objTx.put("tx_token_amount", tokenAmount.longValue());
+                                    }
+                                } catch (Exception e) {
                                     objTx.put("tx_trx_amount", 0);
-                                    objTx.put("tx_token_amount", tokenAmount.longValue());
+                                    objTx.put("tx_token_amount", 0);
                                 }
                             }
 
