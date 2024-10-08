@@ -230,8 +230,8 @@ public class FullNode {
 ////        long endBlock = 65352295L;
 //        long endBlock = 64805095L;
 
-        long startBlock = 65626700L;
-        long endBlock = 65647999L;
+        long startBlock = 65697450L;
+        long endBlock = 65726255L;
         final String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
         final String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
 
@@ -247,7 +247,9 @@ public class FullNode {
                 break;
             }
 
+            int index = 0;
             for (TransactionCapsule tx : blockCapsule.getTransactions()) {
+                index++;
                 Protocol.Transaction transaction = tx.getInstance();
                 Protocol.Transaction.Contract.ContractType type =
                         transaction.getRawData().getContract(0).getType();
@@ -277,6 +279,7 @@ public class FullNode {
                             obj.put("res", transaction.getRet(0).getContractRet().name());
                             obj.put("sr",  StringUtil.encode58Check(blockCapsule.getWitnessAddress().toByteArray()));
                             obj.put("sender", ownerAddress);
+                            obj.put("pos", index);
 
                             System.out.println(obj.toJSONString());
                         }
