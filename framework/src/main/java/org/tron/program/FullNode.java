@@ -230,8 +230,8 @@ public class FullNode {
 ////        long endBlock = 65352295L;
 //        long endBlock = 64805095L;
 
-        long startBlock = 65841400L;
-        long endBlock = 65870255L;
+        long startBlock = 65870200L;
+        long endBlock = 65899000L;
         final String OWNER_ADDRESS = "TPsUGKAoXDSFz332ZYtTGdDHWzftLYWFj7";
         final String CONTRACT_ADDRESS = "TZFs5ch1R1C4mmjwrrmZqeqbUgGpxY1yWB";
 
