@@ -19,7 +19,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         ref: master
-        path: docker
 
     # Log in to Docker Hub
     - name: Log in to Docker Hub
@@ -31,6 +30,7 @@ jobs:
     # Build the Docker image
     - name: Build Docker Image
       run: |
+        cd docker
         docker build -t barbatos0707/block:${{ github.event.inputs.image_tag }} .
 
     # Push the Docker image to Docker Hub
