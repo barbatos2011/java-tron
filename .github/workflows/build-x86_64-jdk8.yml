@@ -25,8 +25,8 @@ jobs:
     # Define environment variables for reuse
     env:
       BUILD_VERSION: ${{ inputs.project_version }}
-      SHORT_SHA: $(echo ${{ github.sha }} | cut -c1-7)
-      TIMESTAMP: $(date -u +"%Y%m%d-%H%M%S")
+      SHORT_SHA: echo ${{ github.sha }} | cut -c1-7
+      TIMESTAMP: date -u +"%Y%m%d-%H%M%S"
       S3_BUCKET: s3://${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}
       COMMIT_HASH: ${{ github.sha }}
       BUILD_OUTPUT_DIR: ./build/libs
