@@ -1,4 +1,4 @@
-name: Build - Artifacts
+name: Build - X86_64/Ubuntu-22.04/JDK8
 
 on:
   workflow_dispatch:
@@ -47,7 +47,7 @@ jobs:
           export BASE_DIR="/java-tron"
           set -o errexit -o nounset
           sudo apt-get update && sudo apt-get install -y wget
-          wget -P /usr/local https://github.com/frekele/oracle-java/releases/download/8u202-b08/$JDK_TAR
+          sudo wget -P /usr/local https://github.com/frekele/oracle-java/releases/download/8u202-b08/$JDK_TAR
           echo "$JDK_MD5 /usr/local/$JDK_TAR" | md5sum -c
           sudo tar -zxf /usr/local/$JDK_TAR -C /usr/local
           sudo rm /usr/local/$JDK_TAR
