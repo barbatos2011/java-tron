@@ -1,0 +1,103 @@
+name: Build - Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_version:
+        description: "Project version (e.g. 1.0.0)"
+        required: true
+        default: ""
+      upload-to-s3:
+          description: 'Upload artifacts to S3'
+          required: false
+          type: boolean
+          default: false
+
+permissions:
+  id-token: write # Only allow OIDC token access
+  contents: read # Limit repository access
+
+jobs:
+  build:
+    name: ${{ (inputs.upload-to-s3 != false) && 'Build and Upload to S3' || 'Build' }} - Ubuntu-22.04-${{ inputs.project_version }}
+    runs-on: ubuntu-22.04
+
+    # Define environment variables for reuse
+    env:
+      BUILD_VERSION: ${{ inputs.project_version }}
+      SHORT_SHA: $(echo ${{ github.sha }} | cut -c1-7)
+      TIMESTAMP: $(date -u +"%Y%m%d-%H%M%S")
+      S3_BUCKET: s3://${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}
+      COMMIT_HASH: ${{ github.sha }}
+      BUILD_OUTPUT_DIR: ./build/libs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set short SHA and timestamp
+        run: |
+            echo "S3_PATH=${{ env.S3_BUCKET }}/artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.TIMESTAMP }}-${{ env.SHORT_SHA }}-x86_64-jdk8" >> $GITHUB_ENV
+
+      - name: Set up JDK 8
+        run: |
+          export JDK_TAR="jdk-8u202-linux-x64.tar.gz"
+          export JDK_DIR="jdk1.8.0_202"
+          export JDK_MD5="0029351f7a946f6c05b582100c7d45b7"
+          export BASE_DIR="/java-tron"
+          set -o errexit -o nounset
+          sudo apt-get update && sudo apt-get install -y wget
+          wget -P /usr/local https://github.com/frekele/oracle-java/releases/download/8u202-b08/$JDK_TAR
+          echo "$JDK_MD5 /usr/local/$JDK_TAR" | md5sum -c
+          sudo tar -zxf /usr/local/$JDK_TAR -C /usr/local
+          sudo rm /usr/local/$JDK_TAR
+          export JAVA_HOME=/usr/local/$JDK_DIR
+          export CLASSPATH=$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+          export PATH=$PATH:$JAVA_HOME/bin
+          echo "JAVA_HOME=/usr/local/$JDK_DIR" >> $GITHUB_ENV
+          echo "CLASSPATH=/usr/local/$JDK_DIR/lib/dt.jar:/usr/local/$JDK_DIR/lib/tools.jar" >> $GITHUB_ENV
+          echo "/usr/local/$JDK_DIR/bin" >> $GITHUB_PATH
+
+      # --- Regular Gradle build (with dependency verification) ---
+      - name: Build project
+        run: ./gradlew clean build -x test
+        # run: ./gradlew clean build --no-daemon
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.TIMESTAMP }}-${{ env.SHORT_SHA }}-x86_64-jdk8
+          path: ${{ env.BUILD_OUTPUT_DIR }}
+          if-no-files-found: error
+
+      # --- AWS S3 Upload Section ---
+      - name: Configure AWS Credentials (OIDC)
+        if: ${{ inputs.upload-to-s3 != false }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV_UPLOAD }} # 👈 replace with your IAM role
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload artifacts to S3
+        if: ${{ inputs.upload-to-s3 != false }}
+        run: |
+          aws s3 cp --recursive ${{ env.BUILD_OUTPUT_DIR }}/ "s3://${{ env.S3_PATH }}/"
+
+          echo "## MD5 Summary of Uploaded Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          for file in build/libs/*.jar; do
+            if [ -f "$file" ]; then
+              FILENAME=$(basename "$file")
+              LOCAL_MD5=$(md5sum $file | awk '{print $1}')
+              echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+              echo "$FILENAME: $LOCAL_MD5"
+            fi
+          done
+
+          LOCAL_MD5=$(md5sum build/publications/mavenJava/pom-default.xml | awk '{print $1}')
+          echo "| trident-${{ github.event.inputs.project_version }}.pom | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+          echo "trident-${{ github.event.inputs.project_version }}.pom: $LOCAL_MD5"
+
+
