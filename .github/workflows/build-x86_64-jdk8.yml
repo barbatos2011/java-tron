@@ -25,11 +25,9 @@ jobs:
     # Define environment variables for reuse
     env:
       BUILD_VERSION: ${{ inputs.project_version }}
-      SHORT_SHA: echo ${{ github.sha }} | cut -c1-7
-      TIMESTAMP: date -u +"%Y%m%d-%H%M%S"
-      S3_BUCKET: s3://${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}
       COMMIT_HASH: ${{ github.sha }}
       BUILD_OUTPUT_DIR: ./build/libs
+      S3_BUCKET: s3://${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}
 
     steps:
       - name: Checkout repository
@@ -37,7 +35,10 @@ jobs:
 
       - name: Set short SHA and timestamp
         run: |
-            echo "S3_PATH=${{ env.S3_BUCKET }}/artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.TIMESTAMP }}-${{ env.SHORT_SHA }}-x86_64-jdk8" >> $GITHUB_ENV
+            echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+            echo "TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.TIMESTAMP }}-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+            echo "S3_PATH=${{ env.S3_BUCKET }}/ ${{ env.ARTIFACT_NAME }}" >> $GITHUB_ENV
 
       - name: Set up JDK 8
         run: |
@@ -66,7 +67,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.TIMESTAMP }}-${{ env.SHORT_SHA }}-x86_64-jdk8
+          name: ${{ env.ARTIFACT_NAME }}
           path: ${{ env.BUILD_OUTPUT_DIR }}
           if-no-files-found: error
 
