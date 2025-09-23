@@ -75,7 +75,7 @@ jobs:
       # --- AWS S3 Upload Section ---
       - name: Configure AWS Credentials (OIDC)
         if: ${{ inputs.upload-to-s3 != false }}
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV_UPLOAD }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
