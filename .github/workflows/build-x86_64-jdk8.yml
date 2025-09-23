@@ -39,7 +39,7 @@ jobs:
       - name: Set artifact name and S3 path
         run: |
             echo "ARTIFACT_NAME=artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
-            echo "S3_PATH=${{ env.S3_BUCKET }}/${{ env.ARTIFACT_NAME }}/" >> $GITHUB_ENV
+            echo "S3_PATH=${{ env.S3_BUCKET }}/artifact-Ubuntu-22.04-${{ env.BUILD_VERSION }}-${{ env.SHORT_SHA }}/" >> $GITHUB_ENV
 
       - name: Set up JDK 8
         run: |
