@@ -207,6 +207,11 @@ public class Args extends CommonParameter {
       PARAMETER.maxEnergyLimitForConstant = max(ENERGY_LIMIT_IN_CONSTANT_TX, configLimit, true);
     }
 
+    if (config.hasPath(ConfigKey.VM_MAX_CONCURRENT_CONSTANT_CALLS)) {
+      PARAMETER.maxConcurrentConstantCalls =
+          config.getInt(ConfigKey.VM_MAX_CONCURRENT_CONSTANT_CALLS);
+    }
+
     if (config.hasPath(ConfigKey.VM_LRU_CACHE_SIZE)) {
       PARAMETER.lruCacheSize = config.getInt(ConfigKey.VM_LRU_CACHE_SIZE);
     }
@@ -263,6 +268,26 @@ public class Args extends CommonParameter {
     if (config.hasPath(ConfigKey.NODE_JSONRPC_MAX_BLOCK_FILTER_NUM)) {
       PARAMETER.jsonRpcMaxBlockFilterNum =
           config.getInt(ConfigKey.NODE_JSONRPC_MAX_BLOCK_FILTER_NUM);
+    }
+
+    if (config.hasPath(ConfigKey.NODE_JSONRPC_MAX_BATCH_SIZE)) {
+      PARAMETER.jsonRpcMaxBatchSize =
+          config.getInt(ConfigKey.NODE_JSONRPC_MAX_BATCH_SIZE);
+    }
+
+    if (config.hasPath(ConfigKey.NODE_JSONRPC_MAX_RESPONSE_SIZE)) {
+      PARAMETER.jsonRpcMaxResponseSize =
+          config.getInt(ConfigKey.NODE_JSONRPC_MAX_RESPONSE_SIZE);
+    }
+
+    if (config.hasPath(ConfigKey.NODE_JSONRPC_MAX_REQUEST_TIMEOUT)) {
+      PARAMETER.jsonRpcMaxRequestTimeout =
+          config.getInt(ConfigKey.NODE_JSONRPC_MAX_REQUEST_TIMEOUT);
+    }
+
+    if (config.hasPath(ConfigKey.NODE_JSONRPC_MAX_ADDRESS_SIZE)) {
+      PARAMETER.jsonRpcMaxAddressSize =
+          config.getInt(ConfigKey.NODE_JSONRPC_MAX_ADDRESS_SIZE);
     }
 
     if (config.hasPath(ConfigKey.VM_MIN_TIME_RATIO)) {
@@ -525,6 +550,11 @@ public class Args extends CommonParameter {
 
     PARAMETER.maxMessageSize = config.hasPath(ConfigKey.NODE_RPC_MAX_MESSAGE_SIZE)
         ? config.getInt(ConfigKey.NODE_RPC_MAX_MESSAGE_SIZE) : GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE;
+
+    if (config.hasPath(ConfigKey.NODE_HTTP_MAX_REQUEST_BODY_SIZE)) {
+      PARAMETER.maxHttpRequestBodySize =
+          config.getInt(ConfigKey.NODE_HTTP_MAX_REQUEST_BODY_SIZE);
+    }
 
     PARAMETER.maxHeaderListSize = config.hasPath(ConfigKey.NODE_RPC_MAX_HEADER_LIST_SIZE)
         ? config.getInt(ConfigKey.NODE_RPC_MAX_HEADER_LIST_SIZE)

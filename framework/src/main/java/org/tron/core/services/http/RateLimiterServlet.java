@@ -1,9 +1,11 @@
 package org.tron.core.services.http;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import io.prometheus.client.Histogram;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -32,6 +34,12 @@ import org.tron.core.services.ratelimiter.strategy.QpsStrategy;
 public abstract class RateLimiterServlet extends HttpServlet {
   private static final String KEY_PREFIX_HTTP = "http_";
   private static final String ADAPTER_PREFIX = "org.tron.core.services.ratelimiter.adapter.";
+  private static final Set<String> ALLOWED_ADAPTERS = ImmutableSet.of(
+      "GlobalPreemptibleAdapter",
+      "QpsRateLimiterAdapter",
+      "IPQPSRateLimiterAdapter",
+      "DefaultBaseQqsAdapter"
+  );
 
   @Autowired
   private RateLimiterContainer container;
@@ -49,6 +57,10 @@ public abstract class RateLimiterServlet extends HttpServlet {
       try {
         cName = item.getStrategy();
         params = item.getParams();
+        if (!ALLOWED_ADAPTERS.contains(cName)) {
+          throw new IllegalArgumentException(
+              "Unknown rate limiter adapter: " + cName);
+        }
         // add the specific rate limiter strategy of servlet.
         Class<?> c = Class.forName(ADAPTER_PREFIX + cName);
         Constructor constructor;

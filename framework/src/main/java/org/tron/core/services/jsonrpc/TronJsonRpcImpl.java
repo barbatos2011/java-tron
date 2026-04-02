@@ -161,6 +161,7 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
 
   private static final String JSON_ERROR = "invalid json request";
   private static final String BLOCK_NUM_ERROR = "invalid block number";
+  private static final int MAX_HEX_PARAM_LENGTH = 128;
   private static final String TAG_NOT_SUPPORT_ERROR =
       "TAG [earliest | pending | finalized] not supported";
   private static final String QUANTITY_NOT_SUPPORT_ERROR =
@@ -409,6 +410,9 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
       }
       return ByteArray.toJsonHex(balance);
     } else {
+      if (blockNumOrTag.length() > MAX_HEX_PARAM_LENGTH) {
+        throw new JsonRpcInvalidParamsException(BLOCK_NUM_ERROR);
+      }
       try {
         ByteArray.hexToBigInteger(blockNumOrTag);
       } catch (Exception e) {
@@ -558,6 +562,9 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
       DataWord value = storage.getValue(new DataWord(ByteArray.fromHexString(storageIdx)));
       return ByteArray.toJsonHex(value == null ? new byte[32] : value.getData());
     } else {
+      if (blockNumOrTag.length() > MAX_HEX_PARAM_LENGTH) {
+        throw new JsonRpcInvalidParamsException(BLOCK_NUM_ERROR);
+      }
       try {
         ByteArray.hexToBigInteger(blockNumOrTag);
       } catch (Exception e) {
@@ -589,6 +596,9 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
       }
 
     } else {
+      if (blockNumOrTag.length() > MAX_HEX_PARAM_LENGTH) {
+        throw new JsonRpcInvalidParamsException(BLOCK_NUM_ERROR);
+      }
       try {
         ByteArray.hexToBigInteger(blockNumOrTag);
       } catch (Exception e) {
@@ -971,6 +981,9 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
           throw new JsonRpcInvalidParamsException(JSON_ERROR);
         }
 
+        if (blockNumOrTag.length() > MAX_HEX_PARAM_LENGTH) {
+          throw new JsonRpcInvalidParamsException(BLOCK_NUM_ERROR);
+        }
         long blockNumber;
         try {
           blockNumber = ByteArray.hexToBigInteger(blockNumOrTag).longValue();
@@ -1014,6 +1027,9 @@ public class TronJsonRpcImpl implements TronJsonRpc, Closeable {
       return call(addressData, contractAddressData, transactionCall.parseValue(),
           ByteArray.fromHexString(transactionCall.getData()));
     } else {
+      if (blockNumOrTag.length() > MAX_HEX_PARAM_LENGTH) {
+        throw new JsonRpcInvalidParamsException(BLOCK_NUM_ERROR);
+      }
       try {
         ByteArray.hexToBigInteger(blockNumOrTag);
       } catch (Exception e) {

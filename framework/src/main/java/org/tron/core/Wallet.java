@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -262,6 +263,9 @@ import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
 @Slf4j
 @Component
 public class Wallet {
+
+  private static final Semaphore CONSTANT_CALL_SEMAPHORE = new Semaphore(
+      Args.getInstance().getMaxConcurrentConstantCalls());
 
   private static final String SHIELDED_ID_NOT_ALLOWED = "ShieldedTransactionApi is not allowed";
   private static final String PAYMENT_ADDRESS_FORMAT_WRONG = "paymentAddress format is wrong";
@@ -743,6 +747,9 @@ public class Wallet {
     } else if (PENDING_STR.equalsIgnoreCase(id)) {
       throw new JsonRpcInvalidParamsException(TAG_PENDING_SUPPORT_ERROR);
     } else {
+      if (id.length() > 128) {
+        throw new JsonRpcInvalidParamsException("invalid block number");
+      }
       long blockNumber;
       try {
         blockNumber = ByteArray.hexToBigInteger(id).longValue();
@@ -3123,6 +3130,26 @@ public class Wallet {
   public Transaction triggerConstantContract(TriggerSmartContract triggerSmartContract,
       TransactionCapsule trxCap, Builder builder, Return.Builder retBuilder, boolean isEstimating)
       throws ContractValidateException, ContractExeException, HeaderNotFound, VMIllegalException {
+
+    if (!CONSTANT_CALL_SEMAPHORE.tryAcquire()) {
+      throw new ContractValidateException(
+          "Too many concurrent constant calls, max allowed: "
+              + Args.getInstance().getMaxConcurrentConstantCalls());
+    }
+    try {
+      return doTriggerConstantContract(
+          triggerSmartContract, trxCap, builder, retBuilder, isEstimating);
+    } finally {
+      CONSTANT_CALL_SEMAPHORE.release();
+    }
+  }
+
+  private Transaction doTriggerConstantContract(
+      TriggerSmartContract triggerSmartContract,
+      TransactionCapsule trxCap, Builder builder, Return.Builder retBuilder,
+      boolean isEstimating)
+      throws ContractValidateException, ContractExeException,
+      HeaderNotFound, VMIllegalException {
 
     if (triggerSmartContract.getContractAddress().isEmpty()) { // deploy contract
       CreateSmartContract.Builder deployBuilder = CreateSmartContract.newBuilder();

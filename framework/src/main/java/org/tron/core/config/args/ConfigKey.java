@@ -20,6 +20,8 @@ final class ConfigKey {
   // vm
   public static final String VM_SUPPORT_CONSTANT = "vm.supportConstant";
   public static final String VM_MAX_ENERGY_LIMIT_FOR_CONSTANT = "vm.maxEnergyLimitForConstant";
+  public static final String VM_MAX_CONCURRENT_CONSTANT_CALLS =
+      "vm.maxConcurrentConstantCalls";
   public static final String VM_LRU_CACHE_SIZE = "vm.lruCacheSize";
   public static final String VM_MIN_TIME_RATIO = "vm.minTimeRatio";
   public static final String VM_MAX_TIME_RATIO = "vm.maxTimeRatio";
@@ -123,6 +125,8 @@ final class ConfigKey {
   public static final String NODE_RPC_MAX_CONNECTION_AGE_IN_MILLIS =
       "node.rpc.maxConnectionAgeInMillis";
   public static final String NODE_RPC_MAX_MESSAGE_SIZE = "node.rpc.maxMessageSize";
+  public static final String NODE_HTTP_MAX_REQUEST_BODY_SIZE =
+      "node.http.maxRequestBodySize";
   public static final String NODE_RPC_MAX_HEADER_LIST_SIZE = "node.rpc.maxHeaderListSize";
   public static final String NODE_RPC_REFLECTION_SERVICE = "node.rpc.reflectionService";
   public static final String NODE_RPC_MIN_EFFECTIVE_CONNECTION =
@@ -150,6 +154,14 @@ final class ConfigKey {
   public static final String NODE_JSONRPC_MAX_SUB_TOPICS = "node.jsonrpc.maxSubTopics";
   public static final String NODE_JSONRPC_MAX_BLOCK_FILTER_NUM =
       "node.jsonrpc.maxBlockFilterNum";
+  public static final String NODE_JSONRPC_MAX_BATCH_SIZE =
+      "node.jsonrpc.maxBatchSize";
+  public static final String NODE_JSONRPC_MAX_RESPONSE_SIZE =
+      "node.jsonrpc.maxResponseSize";
+  public static final String NODE_JSONRPC_MAX_REQUEST_TIMEOUT =
+      "node.jsonrpc.maxRequestTimeout";
+  public static final String NODE_JSONRPC_MAX_ADDRESS_SIZE =
+      "node.jsonrpc.maxAddressSize";
 
   // node - dns
   public static final String NODE_DNS_TREE_URLS = "node.dns.treeUrls";
