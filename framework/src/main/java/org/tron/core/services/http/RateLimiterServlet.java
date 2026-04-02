@@ -1,6 +1,7 @@
 package org.tron.core.services.http;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import io.prometheus.client.Histogram;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -33,7 +34,7 @@ import org.tron.core.services.ratelimiter.strategy.QpsStrategy;
 public abstract class RateLimiterServlet extends HttpServlet {
   private static final String KEY_PREFIX_HTTP = "http_";
   private static final String ADAPTER_PREFIX = "org.tron.core.services.ratelimiter.adapter.";
-  private static final Set<String> ALLOWED_ADAPTERS = Set.of(
+  private static final Set<String> ALLOWED_ADAPTERS = ImmutableSet.of(
       "GlobalPreemptibleAdapter",
       "QpsRateLimiterAdapter",
       "IPQPSRateLimiterAdapter",
