@@ -280,6 +280,8 @@ public class SolidityNodeHttpApiService extends HttpService {
 
   @Override
   protected void addFilter(ServletContextHandler context) {
+    super.addFilter(context);
+
     // http access filter
     context.addFilter(new FilterHolder(httpApiAccessFilter), "/walletsolidity/*",
         EnumSet.allOf(DispatcherType.class));

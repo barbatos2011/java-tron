@@ -518,6 +518,8 @@ public class FullNodeHttpApiService extends HttpService {
 
   @Override
   protected void addFilter(ServletContextHandler context) {
+    super.addFilter(context);
+
     // filters the specified APIs
     // when node is lite fullnode and openHistoryQueryWhenLiteFN is false
     context.addFilter(new FilterHolder(liteFnQueryHttpFilter), "/*",

@@ -33,6 +33,8 @@ public class FullNodeJsonRpcHttpService extends HttpService {
 
   @Override
   protected void addFilter(ServletContextHandler context) {
+    super.addFilter(context);
+
     // filter
     ServletHandler handler = new ServletHandler();
     FilterHolder fh = handler

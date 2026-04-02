@@ -48,6 +48,9 @@ public class CommonParameter {
   public long maxEnergyLimitForConstant = 100_000_000L;
   @Getter
   @Setter
+  public int maxConcurrentConstantCalls = 8;
+  @Getter
+  @Setter
   public int lruCacheSize = 500;
   @Getter
   @Setter
@@ -214,6 +217,9 @@ public class CommonParameter {
   @Getter
   @Setter
   public int maxMessageSize;
+  @Getter
+  @Setter
+  public int maxHttpRequestBodySize = 5 * 1024 * 1024;
   @Getter
   @Setter
   public int maxHeaderListSize;
@@ -459,6 +465,18 @@ public class CommonParameter {
   @Getter
   @Setter
   public int jsonRpcMaxBlockFilterNum = 50000;
+  @Getter
+  @Setter
+  public int jsonRpcMaxBatchSize = 1000;
+  @Getter
+  @Setter
+  public int jsonRpcMaxResponseSize = 25 * 1024 * 1024;
+  @Getter
+  @Setter
+  public int jsonRpcMaxRequestTimeout = 30;
+  @Getter
+  @Setter
+  public int jsonRpcMaxAddressSize = 1000;
 
   @Getter
   @Setter
