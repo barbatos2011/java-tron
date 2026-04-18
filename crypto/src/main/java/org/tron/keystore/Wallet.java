@@ -23,7 +23,6 @@ import org.tron.common.crypto.SignInterface;
 import org.tron.common.crypto.SignUtils;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.StringUtil;
-import org.tron.core.config.args.Args;
 import org.tron.core.exception.CipherException;
 
 /**
@@ -168,8 +167,8 @@ public class Wallet {
     return Hash.sha3(result);
   }
 
-  public static SignInterface decrypt(String password, WalletFile walletFile)
-      throws CipherException {
+  public static SignInterface decrypt(String password, WalletFile walletFile,
+      boolean ecKey) throws CipherException {
 
     validate(walletFile);
 
@@ -205,14 +204,29 @@ public class Wallet {
 
     byte[] derivedMac = generateMac(derivedKey, cipherText);
 
-    if (!Arrays.equals(derivedMac, mac)) {
+    if (!java.security.MessageDigest.isEqual(derivedMac, mac)) {
       throw new CipherException("Invalid password provided");
     }
 
     byte[] encryptKey = Arrays.copyOfRange(derivedKey, 0, 16);
     byte[] privateKey = performCipherOperation(Cipher.DECRYPT_MODE, iv, encryptKey, cipherText);
 
-    return SignUtils.fromPrivate(privateKey, Args.getInstance().isECKeyCryptoEngine());
+    SignInterface keyPair = SignUtils.fromPrivate(privateKey, ecKey);
+
+    // Enforce address consistency: if the keystore declares an address, it MUST match
+    // the address derived from the decrypted private key. Prevents address spoofing
+    // where a crafted keystore displays one address but encrypts a different key.
+    String declared = walletFile.getAddress();
+    if (declared != null && !declared.isEmpty()) {
+      String derived = StringUtil.encode58Check(keyPair.getAddress());
+      if (!declared.equals(derived)) {
+        throw new CipherException(
+            "Keystore address mismatch: file declares " + declared
+                + " but private key derives " + derived);
+      }
+    }
+
+    return keyPair;
   }
 
   static void validate(WalletFile walletFile) throws CipherException {

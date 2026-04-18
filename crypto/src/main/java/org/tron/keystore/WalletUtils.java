@@ -6,18 +6,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Scanner;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.tron.common.crypto.SignInterface;
 import org.tron.common.crypto.SignUtils;
 import org.tron.common.utils.Utils;
-import org.tron.core.config.args.Args;
 import org.tron.core.exception.CipherException;
 
 /**
@@ -27,32 +35,37 @@ public class WalletUtils {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
+  private static final Set<PosixFilePermission> OWNER_ONLY =
+      Collections.unmodifiableSet(EnumSet.of(
+          PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+
   static {
     objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
-  public static String generateFullNewWalletFile(String password, File destinationDirectory)
+  public static String generateFullNewWalletFile(String password, File destinationDirectory,
+      boolean ecKey)
       throws NoSuchAlgorithmException, NoSuchProviderException,
       InvalidAlgorithmParameterException, CipherException, IOException {
 
-    return generateNewWalletFile(password, destinationDirectory, true);
+    return generateNewWalletFile(password, destinationDirectory, true, ecKey);
   }
 
-  public static String generateLightNewWalletFile(String password, File destinationDirectory)
+  public static String generateLightNewWalletFile(String password, File destinationDirectory,
+      boolean ecKey)
       throws NoSuchAlgorithmException, NoSuchProviderException,
       InvalidAlgorithmParameterException, CipherException, IOException {
 
-    return generateNewWalletFile(password, destinationDirectory, false);
+    return generateNewWalletFile(password, destinationDirectory, false, ecKey);
   }
 
   public static String generateNewWalletFile(
-      String password, File destinationDirectory, boolean useFullScrypt)
+      String password, File destinationDirectory, boolean useFullScrypt, boolean ecKey)
       throws CipherException, IOException, InvalidAlgorithmParameterException,
       NoSuchAlgorithmException, NoSuchProviderException {
 
-    SignInterface ecKeyPair = SignUtils.getGeneratedRandomSign(Utils.getRandom(),
-        Args.getInstance().isECKeyCryptoEngine());
+    SignInterface ecKeyPair = SignUtils.getGeneratedRandomSign(Utils.getRandom(), ecKey);
     return generateWalletFile(password, ecKeyPair, destinationDirectory, useFullScrypt);
   }
 
@@ -69,19 +82,76 @@ public class WalletUtils {
 
     String fileName = getWalletFileName(walletFile);
     File destination = new File(destinationDirectory, fileName);
-
-    objectMapper.writeValue(destination, walletFile);
+    writeWalletFile(walletFile, destination);
 
     return fileName;
   }
 
-  public static Credentials loadCredentials(String password, File source)
-      throws IOException, CipherException {
-    WalletFile walletFile = objectMapper.readValue(source, WalletFile.class);
-    return Credentials.create(Wallet.decrypt(password, walletFile));
+  /**
+   * Write a WalletFile to the given destination path with owner-only (0600)
+   * permissions, using a temp file + atomic rename.
+   *
+   * <p>On POSIX filesystems, the temp file is created atomically with 0600
+   * permissions via {@link Files#createTempFile(Path, String, String,
+   * java.nio.file.attribute.FileAttribute[])}, avoiding any window where the
+   * file is world-readable.
+   *
+   * <p>On non-POSIX filesystems (e.g. Windows) the fallback uses
+   * {@link File#setReadable(boolean, boolean)} /
+   * {@link File#setWritable(boolean, boolean)} which is best-effort — these
+   * methods manipulate only DOS-style attributes on Windows and may not update
+   * file ACLs. The sensitive keystore JSON is written only after the narrowing
+   * calls, so no confidential data is exposed during the window, but callers
+   * on Windows should not infer strict owner-only ACL enforcement from this.
+   *
+   * @param walletFile  the keystore to serialize
+   * @param destination the final target file (existing file will be replaced)
+   */
+  public static void writeWalletFile(WalletFile walletFile, File destination)
+      throws IOException {
+    Path dir = destination.getAbsoluteFile().getParentFile().toPath();
+    Files.createDirectories(dir);
+
+    Path tmp;
+    try {
+      tmp = Files.createTempFile(dir, "keystore-", ".tmp",
+          PosixFilePermissions.asFileAttribute(OWNER_ONLY));
+    } catch (UnsupportedOperationException e) {
+      // Windows / non-POSIX fallback — best-effort narrowing only (see JavaDoc)
+      tmp = Files.createTempFile(dir, "keystore-", ".tmp");
+      File tf = tmp.toFile();
+      tf.setReadable(false, false);
+      tf.setReadable(true, true);
+      tf.setWritable(false, false);
+      tf.setWritable(true, true);
+    }
+
+    try {
+      objectMapper.writeValue(tmp.toFile(), walletFile);
+      try {
+        Files.move(tmp, destination.toPath(),
+            StandardCopyOption.REPLACE_EXISTING,
+            StandardCopyOption.ATOMIC_MOVE);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(tmp, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      }
+    } catch (Exception e) {
+      try {
+        Files.deleteIfExists(tmp);
+      } catch (IOException suppress) {
+        e.addSuppressed(suppress);
+      }
+      throw e;
+    }
   }
 
-  private static String getWalletFileName(WalletFile walletFile) {
+  public static Credentials loadCredentials(String password, File source, boolean ecKey)
+      throws IOException, CipherException {
+    WalletFile walletFile = objectMapper.readValue(source, WalletFile.class);
+    return Credentials.create(Wallet.decrypt(password, walletFile, ecKey));
+  }
+
+  public static String getWalletFileName(WalletFile walletFile) {
     DateTimeFormatter format = DateTimeFormatter.ofPattern(
         "'UTC--'yyyy-MM-dd'T'HH-mm-ss.nVV'--'");
     ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
