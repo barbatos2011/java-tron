@@ -21,7 +21,7 @@ import org.tron.p2p.protos.Connect.DisconnectReason;
 public class KeepAliveService implements MessageProcess {
 
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-      BasicThreadFactory.builder().namingPattern("keepAlive").build());
+      new BasicThreadFactory.Builder().namingPattern("keepAlive").build());
 
   public void init() {
     executor.scheduleWithFixedDelay(() -> {
@@ -44,7 +44,7 @@ public class KeepAliveService implements MessageProcess {
               }
             });
       } catch (Exception t) {
-        log.error("Exception in keep alive task", t);
+        logger.error("Exception in keep alive task", t);
       }
     }, 2, 2, TimeUnit.SECONDS);
   }

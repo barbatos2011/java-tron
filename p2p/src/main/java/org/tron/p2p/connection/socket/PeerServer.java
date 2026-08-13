@@ -1,6 +1,5 @@
 package org.tron.p2p.connection.socket;
 
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -29,20 +28,20 @@ public class PeerServer {
   public void close() {
     if (listening && channelFuture != null && channelFuture.channel().isOpen()) {
       try {
-        log.info("Closing TCP server...");
+        logger.info("Closing TCP server...");
         channelFuture.channel().close().sync();
       } catch (Exception e) {
-        log.warn("Closing TCP server failed.", e);
+        logger.warn("Closing TCP server failed.", e);
       }
     }
   }
 
   public void start(int port) {
     EventLoopGroup bossGroup = new NioEventLoopGroup(1,
-        BasicThreadFactory.builder().namingPattern("peerBoss").build());
+        new BasicThreadFactory.Builder().namingPattern("peerBoss").build());
     //if threads = 0, it is number of core * 2
     EventLoopGroup workerGroup = new NioEventLoopGroup(Parameter.TCP_NETTY_WORK_THREAD_NUM,
-        BasicThreadFactory.builder().namingPattern("peerWorker-%d").build());
+        new BasicThreadFactory.Builder().namingPattern("peerWorker-%d").build());
     P2pChannelInitializer p2pChannelInitializer = new P2pChannelInitializer("", false, true);
     try {
       ServerBootstrap b = new ServerBootstrap();
@@ -57,7 +56,7 @@ public class PeerServer {
       b.childHandler(p2pChannelInitializer);
 
       // Start the client.
-      log.info("TCP listener started, bind port {}", port);
+      logger.info("TCP listener started, bind port {}", port);
 
       channelFuture = b.bind(port).sync();
 
@@ -66,10 +65,10 @@ public class PeerServer {
       // Wait until the connection is closed.
       channelFuture.channel().closeFuture().sync();
 
-      log.info("TCP listener closed");
+      logger.info("TCP listener closed");
 
     } catch (Exception e) {
-      log.error("Start TCP server failed", e);
+      logger.error("Start TCP server failed", e);
     } finally {
       workerGroup.shutdownGracefully();
       bossGroup.shutdownGracefully();

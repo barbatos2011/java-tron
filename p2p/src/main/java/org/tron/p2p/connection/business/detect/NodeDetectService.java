@@ -36,7 +36,7 @@ public class NodeDetectService implements MessageProcess {
       .newBuilder().maximumSize(5000).expireAfterWrite(1, TimeUnit.HOURS).build();
 
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-      BasicThreadFactory.builder().namingPattern("nodeDetectService").build());
+      new BasicThreadFactory.Builder().namingPattern("nodeDetectService").build());
 
   private final long NODE_DETECT_THRESHOLD = 5 * 60 * 1000;
 
@@ -64,7 +64,7 @@ public class NodeDetectService implements MessageProcess {
       try {
         work();
       } catch (Exception t) {
-        log.warn("Exception in node detect worker, {}", t.getMessage());
+        logger.warn("Exception in node detect worker, {}", t.getMessage());
       }
     }, 1, 5, TimeUnit.SECONDS);
   }
@@ -94,7 +94,7 @@ public class NodeDetectService implements MessageProcess {
       n = MAX_NODE_SLOW_DETECT;
     }
 
-    n = Math.min(n, nodeStats.size());
+    n = StrictMath.min(n, nodeStats.size());
 
     for (int i = 0; i < n; i++) {
       detect(nodeStats.get(i));
@@ -137,7 +137,7 @@ public class NodeDetectService implements MessageProcess {
       setLastDetectTime(stat);
       peerClient.connectAsync(stat.getNode(), true);
     } catch (Exception e) {
-      log.warn("Detect node {} failed, {}",
+      logger.warn("Detect node {} failed, {}",
           stat.getNode().getPreferInetSocketAddress(), e.getMessage());
       nodeStatMap.remove(stat.getSocketAddress());
     }

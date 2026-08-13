@@ -57,7 +57,7 @@ public class KadService implements DiscoverService {
       bootNodes.add(new Node(address));
     }
     this.pongTimer = Executors.newSingleThreadScheduledExecutor(
-        BasicThreadFactory.builder().namingPattern("pongTimer").build());
+        new BasicThreadFactory.Builder().namingPattern("pongTimer").build());
     this.homeNode = new Node(Parameter.p2pConfig.getNodeID(), Parameter.p2pConfig.getIp(),
         Parameter.p2pConfig.getIpv6(), Parameter.p2pConfig.getPort());
     this.table = new NodeTable(homeNode);
@@ -78,7 +78,7 @@ public class KadService implements DiscoverService {
         discoverTask.close();
       }
     } catch (Exception e) {
-      log.error("Close nodeManagerTasksTimer or pongTimer failed", e);
+      logger.error("Close nodeManagerTasksTimer or pongTimer failed", e);
       throw e;
     }
   }
