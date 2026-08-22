@@ -172,11 +172,15 @@ public class NodeTableTest {
 
   @Test
   public void getClosestNodes_nodesMoreThanBucketCapacity() throws Exception {
-    byte[] bytes = new byte[64];
-    bytes[0] = 15;
-    Node nearNode = new Node(bytes, "127.0.0.19", null, 18888, 18888);
-    bytes[0] = 70;
-    Node farNode = new Node(bytes, "127.0.0.20", null, 18888, 18888);
+    // Each node needs its own id array: Node keeps the reference it is given
+    // (this.id = id), so mutating one array after construction would rewrite the
+    // id of the node already built from it, leaving both nodes with the same id.
+    byte[] nearId = new byte[64];
+    nearId[0] = 15;
+    Node nearNode = new Node(nearId, "127.0.0.19", null, 18888, 18888);
+    byte[] farId = new byte[64];
+    farId[0] = 70;
+    Node farNode = new Node(farId, "127.0.0.20", null, 18888, 18888);
     nodeTable.addNode(nearNode);
     nodeTable.addNode(farNode);
     for (int i = 0; i < KademliaOptions.BUCKET_SIZE - 1; i++) {
@@ -187,8 +191,10 @@ public class NodeTableTest {
     Assert.assertTrue(nodeTable.getBucketsCount() > 1);
     //3 buckets, nearnode's distance is 252, far's is 255, others' are 253
     List<Node> closest = nodeTable.getClosestNodes(homeNode.getId());
+    Assert.assertEquals(KademliaOptions.BUCKET_SIZE, closest.size());
     Assert.assertTrue(closest.contains(nearNode));
     //the farest node should be excluded
+    Assert.assertFalse(closest.contains(farNode));
   }
 
   @Test
