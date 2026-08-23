@@ -1,7 +1,7 @@
 package org.tron.p2p.discover.message.kad;
 
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
@@ -11,7 +11,9 @@ import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.discover.message.MessageType;
+import org.tron.p2p.protos.Discover;
 import org.tron.p2p.protos.Discover.Endpoint;
+import org.tron.p2p.utils.ByteArray;
 import org.tron.p2p.utils.NetUtil;
 
 /**
@@ -122,13 +124,35 @@ public class KadMessagesTest {
   }
 
   @Test
-  public void messageFromAnInvalidEndpointIsRejected() throws Exception {
-    // A port outside 1-65535 must not pass valid(); this is the shape a hostile
-    // NEIGHBOURS entry takes.
-    Node bad = new Node(NetUtil.getNodeId(), "127.0.0.1", null, 18888, 18888);
-    PongMessage sent = new PongMessage(bad);
-    PongMessage parsed = new PongMessage(sent.getData());
-    Assert.assertTrue(parsed.valid());
-    Assert.assertFalse(Arrays.equals(new byte[0], parsed.getData()));
+  public void aMessageWithNoAddressIsRejected() throws Exception {
+    // valid() delegates to NetUtil.validNode, which requires a routable host.
+    // An endpoint carrying only a node id and a port is the shape a malformed
+    // NEIGHBOURS entry takes, and it must not pass.
+    Discover.PongMessage wire = Discover.PongMessage.newBuilder()
+        .setFrom(Endpoint.newBuilder()
+            .setNodeId(ByteString.copyFrom(NetUtil.getNodeId()))
+            .setPort(18888)
+            .build())
+        .setEcho(1)
+        .setTimestamp(System.currentTimeMillis())
+        .build();
+
+    PongMessage parsed = new PongMessage(wire.toByteArray());
+    Assert.assertFalse(parsed.valid());
+  }
+
+  @Test
+  public void aMessageWithNoNodeIdIsRejected() throws Exception {
+    Discover.PongMessage wire = Discover.PongMessage.newBuilder()
+        .setFrom(Endpoint.newBuilder()
+            .setAddress(ByteString.copyFrom(ByteArray.fromString("127.0.0.1")))
+            .setPort(18888)
+            .build())
+        .setEcho(1)
+        .setTimestamp(System.currentTimeMillis())
+        .build();
+
+    PongMessage parsed = new PongMessage(wire.toByteArray());
+    Assert.assertFalse(parsed.valid());
   }
 }

@@ -1,6 +1,9 @@
 package org.tron.p2p;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,6 +25,8 @@ public class P2pServiceTest {
 
   private P2pConfig saved;
   private P2pService service;
+  private List<P2pEventHandler> savedHandlerList;
+  private Map<Byte, P2pEventHandler> savedHandlerMap;
 
   @Before
   public void setUp() {
@@ -33,6 +38,11 @@ public class P2pServiceTest {
     config.setDiscoverEnable(false);
     config.setDisconnectionPolicyEnable(false);
 
+    // register() writes into process-wide registries that nothing else resets,
+    // so snapshot them and put the originals back afterwards.
+    savedHandlerList = new ArrayList<>(Parameter.handlerList);
+    savedHandlerMap = new HashMap<>(Parameter.handlerMap);
+
     service = new P2pService();
     service.start(config);
   }
@@ -41,6 +51,8 @@ public class P2pServiceTest {
   public void tearDown() {
     service.close();
     ChannelManager.isShutdown = false;
+    Parameter.handlerList = savedHandlerList;
+    Parameter.handlerMap = savedHandlerMap;
     Parameter.p2pConfig = saved;
   }
 

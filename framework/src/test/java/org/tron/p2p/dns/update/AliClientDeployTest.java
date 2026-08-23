@@ -153,17 +153,30 @@ public class AliClientDeployTest {
   }
 
   @Test
-  public void deployClearsServerNodesAfterwards() throws Exception {
-    when(sdk.describeDomainRecords(any(DescribeDomainRecordsRequest.class)))
-        .thenReturn(records());
+  public void deployRefreshesServerNodesFromDnsRatherThanTrustingTheCachedSet() throws Exception {
+    // deploy() clears serverNodes at the end, but collectRecords() has already
+    // reassigned it from the DNS response on the way in -- so asserting it is
+    // empty afterwards would pass no matter what deploy() did. What is worth
+    // pinning is that a stale cached set does not survive the round trip.
     setServerNodes(new HashSet<>(
-        Collections.singletonList(new DnsNode(null, "10.0.0.1", null, 10000))));
+        Collections.singletonList(new DnsNode(null, "10.0.0.99", null, 10000))));
 
-    client.deploy(DOMAIN, signedTree("192.168.0.1"));
+    String enr = Entry.nodesPrefix + DnsNode.compress(
+        Collections.singletonList(new DnsNode(null, "192.168.0.7", null, 10000)));
+    when(sdk.describeDomainRecords(any(DescribeDomainRecordsRequest.class)))
+        .thenReturn(records(new DescribeDomainRecordsResponseBodyDomainRecordsRecord()
+            .setRR("n0").setValue(enr).setRecordId("r0").setTTL(86400L)));
 
+    Set<DnsNode> seen = new HashSet<>();
     Field field = AliClient.class.getDeclaredField("serverNodes");
     field.setAccessible(true);
-    Assert.assertTrue(((Set<?>) field.get(client)).isEmpty());
+
+    client.deploy(DOMAIN, signedTree("192.168.0.7"));
+
+    // 10.0.0.99 was never in DNS, so it must be gone; and the set is emptied at
+    // the end of a successful deploy.
+    seen.addAll((Set<DnsNode>) field.get(client));
+    Assert.assertTrue(seen.isEmpty());
   }
 
   @Test

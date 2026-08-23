@@ -26,8 +26,11 @@ public class SignTest {
     BigInteger first = Sign.publicKeyFromPrivate(PRIVATE_KEY);
     Assert.assertEquals(first, Sign.publicKeyFromPrivate(PRIVATE_KEY));
     Assert.assertEquals(first, keyPair().getPublicKey());
-    // Uncompressed key minus the 0x04 prefix is 64 bytes.
-    Assert.assertTrue(Numeric.toHexStringNoPrefix(first).length() <= 128);
+    // Uncompressed key minus the 0x04 prefix is exactly 64 bytes. Compare on the
+    // zero-padded form: toHexStringNoPrefix drops leading zeros, so a key whose
+    // X coordinate starts with a zero nibble renders shorter than 128 chars.
+    Assert.assertEquals(64, Numeric.toBytesPadded(first, 64).length);
+    Assert.assertEquals(128, Numeric.toHexStringNoPrefixZeroPadded(first, 128).length());
   }
 
   @Test

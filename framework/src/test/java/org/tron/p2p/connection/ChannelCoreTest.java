@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
+import org.tron.p2p.connection.ChannelManager;
 import org.tron.p2p.connection.message.MessageType;
 import org.tron.p2p.connection.message.base.P2pDisconnectMessage;
 import org.tron.p2p.connection.message.keepalive.PingMessage;
@@ -51,10 +52,15 @@ public class ChannelCoreTest {
   public void setUp() {
     saved = Parameter.p2pConfig;
     Parameter.p2pConfig = new P2pConfig();
+    ChannelManager.getBannedNodes().invalidateAll();
   }
 
   @After
   public void tearDown() {
+    // close() bans the peer's address for DEFAULT_BAN_TIME in a process-wide
+    // cache. Left behind, that ban on 127.0.0.1 would make any later test in
+    // this fork see a recently-disconnected peer.
+    ChannelManager.getBannedNodes().invalidateAll();
     Parameter.p2pConfig = saved;
   }
 
