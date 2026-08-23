@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.tron.p2p.P2pConfig;
@@ -217,6 +217,7 @@ public class NodeTableTest {
     List<Node> closest = nodeTable.getClosestNodes(homeNode.getId());
     Assert.assertFalse(closest.isEmpty());
   }
+
   @After
   public void restoreConfig() {
     Parameter.p2pConfig = savedConfig;

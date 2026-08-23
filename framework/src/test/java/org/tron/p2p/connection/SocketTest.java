@@ -6,11 +6,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.tron.common.utils.PublicMethod;
 import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.message.Message;
 import org.tron.p2p.discover.NodeManager;
-import org.tron.common.utils.PublicMethod;
 
 public class SocketTest {
 

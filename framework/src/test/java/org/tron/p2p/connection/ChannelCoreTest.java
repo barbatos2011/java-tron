@@ -15,10 +15,10 @@ import org.junit.Test;
 import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.message.MessageType;
+import org.tron.p2p.connection.message.base.P2pDisconnectMessage;
 import org.tron.p2p.connection.message.keepalive.PingMessage;
 import org.tron.p2p.exception.P2pException;
 import org.tron.p2p.protos.Connect.DisconnectReason;
-import org.tron.p2p.connection.message.base.P2pDisconnectMessage;
 
 /**
  * Channel is the per-peer object every other component holds. These cover the

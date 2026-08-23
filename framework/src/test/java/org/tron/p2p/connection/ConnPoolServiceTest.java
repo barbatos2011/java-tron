@@ -10,12 +10,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.tron.common.utils.PublicMethod;
 import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.business.pool.ConnPoolService;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.discover.NodeManager;
-import org.tron.common.utils.PublicMethod;
 
 public class ConnPoolServiceTest {
 
