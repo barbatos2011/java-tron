@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.tron.p2p.P2pConfig;
+import org.tron.p2p.base.Parameter;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.utils.NetUtil;
 
@@ -16,6 +19,7 @@ public class NodeTableTest {
   private NodeTable nodeTable;
   private String[] ips;
   private List<byte[]> ids;
+  private P2pConfig savedConfig;
 
   @Test
   public void test() {
@@ -50,6 +54,15 @@ public class NodeTableTest {
    */
   @Before
   public void init() {
+    // NodeTable.addNode reaches Parameter.p2pConfig.getIp(). This class used to
+    // rely on some earlier test class in the same fork having set it, so it
+    // could not run on its own and its result depended on fork scheduling.
+    savedConfig = Parameter.p2pConfig;
+    P2pConfig config = new P2pConfig();
+    config.setIp("127.0.0.1");
+    config.setPort(18888);
+    Parameter.p2pConfig = config;
+
     ids = new ArrayList<>();
     for (int i = 0; i < KademliaOptions.BUCKET_SIZE + 1; i++) {
       byte[] id = new byte[64];
@@ -203,5 +216,9 @@ public class NodeTableTest {
     nodeTable.addNode(node);
     List<Node> closest = nodeTable.getClosestNodes(homeNode.getId());
     Assert.assertFalse(closest.isEmpty());
+  }
+  @After
+  public void restoreConfig() {
+    Parameter.p2pConfig = savedConfig;
   }
 }

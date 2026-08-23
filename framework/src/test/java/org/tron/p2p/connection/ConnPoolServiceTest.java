@@ -15,11 +15,15 @@ import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.business.pool.ConnPoolService;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.discover.NodeManager;
+import org.tron.common.utils.PublicMethod;
 
 public class ConnPoolServiceTest {
 
   private static String localIp = "127.0.0.1";
-  private static int port = 10000;
+  // A fixed port collides with SocketTest and with other forks of this task.
+  // PeerServer.start only logs on bind failure, so a collision used to let this
+  // class pass while exercising nothing.
+  private static int port = PublicMethod.chooseRandomPort();
 
   @BeforeClass
   public static void init() {

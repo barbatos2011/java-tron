@@ -10,11 +10,13 @@ import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.message.Message;
 import org.tron.p2p.discover.NodeManager;
+import org.tron.common.utils.PublicMethod;
 
 public class SocketTest {
 
   private static String localIp = "127.0.0.1";
-  private static int port = 10001;
+  // See ConnPoolServiceTest: a fixed port silently no-ops on collision.
+  private static int port = PublicMethod.chooseRandomPort();
 
   @Before
   public void init() {
