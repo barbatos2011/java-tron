@@ -22,22 +22,6 @@ configurations {
 
 }
 
-// The Aliyun / Route53 SDKs added below as testImplementation drag in the same
-// dom4j tail that :p2p excludes module-wide (and that common/build.gradle used
-// to exclude on the external libp2p dependency). Mirror those exclusions here,
-// scoped to the test configurations only so the main runtime classpath is
-// untouched. Without this the test classpath silently re-admits artifacts the
-// project has excluded for years, and dependency verification fails.
-configurations.matching { it.name.startsWith('test') }.configureEach {
-    exclude group: 'jaxen', module: 'jaxen'
-    exclude group: 'javax.xml.stream', module: 'stax-api'
-    exclude group: 'net.java.dev.msv', module: 'msv'
-    exclude group: 'net.java.dev.msv', module: 'xsdlib'
-    exclude group: 'relaxngDatatype', module: 'relaxngDatatype'
-    exclude group: 'pull-parser', module: 'pull-parser'
-    exclude group: 'xpp3', module: 'xpp3'
-}
-
 configurations.getByName('checkstyleConfig') {
     transitive = false
 }
@@ -78,31 +62,6 @@ dependencies {
     testImplementation group: 'org.springframework', name: 'spring-test', version: "${springVersion}"
     testImplementation group: 'javax.portlet', name: 'portlet-api', version: '3.0.1'
 
-    // p2p unit tests live here (project-wide convention). The DNS SDKs and
-    // dnsjava are 'implementation' scope in :p2p, so they are not visible on
-    // this module's test compile classpath — declare them explicitly.
-    // Exclusions mirror p2p/build.gradle so the test classpath resolves the
-    // same artifact set the module itself does.
-    testImplementation('software.amazon.awssdk:route53:2.18.41') {
-        exclude group: 'io.netty', module: 'netty-codec-http2'
-        exclude group: 'io.netty', module: 'netty-codec-http'
-        exclude group: 'io.netty', module: 'netty-common'
-        exclude group: 'io.netty', module: 'netty-buffer'
-        exclude group: 'io.netty', module: 'netty-transport'
-        exclude group: 'io.netty', module: 'netty-codec'
-        exclude group: 'io.netty', module: 'netty-handler'
-        exclude group: 'io.netty', module: 'netty-resolver'
-        exclude group: 'io.netty', module: 'netty-transport-classes-epoll'
-        exclude group: 'io.netty', module: 'netty-transport-native-unix-common'
-        exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
-    }
-    testImplementation('com.aliyun:alidns20150109:3.0.1') {
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
-        exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
-        exclude group: 'pull-parser', module: 'pull-parser'
-        exclude group: 'xpp3', module: 'xpp3'
-    }
-    testImplementation 'dnsjava:dnsjava:3.6.2'
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.5.3'
     api project(":chainbase")
     api project(":protocol")
@@ -228,21 +187,6 @@ jacocoTestReport {
         html.destination file("${buildDir}/jacocoHtml")
     }
     getExecutionData().setFrom(fileTree('../framework/build/jacoco').include("**.exec"))
-
-    // :p2p has no test sourceSet of its own — its unit tests live in
-    // framework/src/test/java, following the project-wide convention. Without
-    // adding p2p's classes and sources here, :p2p:jacocoTestReport produces no
-    // report (no exec data) and this report omits p2p entirely, so the module
-    // would be invisible to the coverage gate despite being exercised by these
-    // tests. Protobuf-generated code is excluded, mirroring p2p's checkstyle
-    // exclusion — generated code is not meaningfully testable.
-    // Closures keep resolution lazy so :p2p need not be evaluated first.
-    additionalClassDirs(files({
-        project(':p2p').sourceSets.main.output.classesDirs.collect {
-            fileTree(dir: it, excludes: ['**/protos/**'])
-        }
-    }))
-    additionalSourceDirs(files({ project(':p2p').sourceSets.main.java.srcDirs }))
 }
 
 def binaryRelease(taskName, jarName, mainClass) {

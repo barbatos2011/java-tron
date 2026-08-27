@@ -10,12 +10,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tron.common.utils.PublicMethod;
 import org.tron.p2p.P2pConfig;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.business.pool.ConnPoolService;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.discover.NodeManager;
+import org.tron.p2p.utils.TestPort;
 
 public class ConnPoolServiceTest {
 
@@ -23,7 +23,7 @@ public class ConnPoolServiceTest {
   // A fixed port collides with SocketTest and with other forks of this task.
   // PeerServer.start only logs on bind failure, so a collision used to let this
   // class pass while exercising nothing.
-  private static int port = PublicMethod.chooseRandomPort();
+  private static int port = TestPort.choose();
 
   @BeforeClass
   public static void init() {

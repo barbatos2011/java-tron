@@ -8,13 +8,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.tron.common.utils.PublicMethod;
 import org.tron.p2p.base.Parameter;
 import org.tron.p2p.connection.Channel;
 import org.tron.p2p.connection.ChannelManager;
 import org.tron.p2p.discover.Node;
 import org.tron.p2p.exception.P2pException;
 import org.tron.p2p.stats.P2pStats;
+import org.tron.p2p.utils.TestPort;
 
 /**
  * P2pService is the library's public entry point: everything java-tron calls
@@ -34,7 +34,7 @@ public class P2pServiceTest {
     P2pConfig config = new P2pConfig();
     config.setIp("127.0.0.1");
     // A fixed port would collide with the other p2p tests sharing this task.
-    config.setPort(PublicMethod.chooseRandomPort());
+    config.setPort(TestPort.choose());
     config.setDiscoverEnable(false);
     config.setDisconnectionPolicyEnable(false);
 
